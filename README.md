@@ -3,10 +3,11 @@
 you can select the wanted LLM from OptoGpt and start chatting!, you can also adjust the temprature.
 
 ### Temperature Experimentation Dashboard
-the Temprature Experimentation Dashboard its goal to test the same prompt with different temperature values.
+the Temprature Experimentation Dashboard its goal to test the same prompt with different temperature values. you can select pre-fixed categories or add the custom one.
+
 
 ### Multi-Persona Chat System
-its goal to 
+its goal to answer the prompt with different personas. you can switch, compare, reset and more.
 
 ### Setup Instructions
 1. Clone the repository.
@@ -25,8 +26,7 @@ its goal to
 - python-dotenv>=1.0.0
 - matplotlib>=3.0.0
 
-### Estimated API Costs
-The estimated API costs for this assignment are minimal, but it is recommended to monitor your usage on the OpenAI platform.
+
 
 
 
