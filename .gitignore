@@ -3,4 +3,6 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
-venv
+.venv
+chunks.json
+faiss_index.bin
