@@ -1,0 +1,17 @@
+{
+  "tasks": [
+    {
+      "id": "10c0bc5f-5641-4f79-9f46-d04069334b44",
+      "title": "Test Task",
+      "description": "This is a test task",
+      "status": "completed",
+      "created_at": "2025-11-19T20:22:44.118Z",
+      "updated_at": "2025-11-19T20:22:55.665Z"
+    }
+  ],
+  "metadata": {
+    "total_tasks": 1,
+    "last_updated": "2025-11-19T20:22:55.665Z",
+    "version": "1.0.0"
+  }
+}

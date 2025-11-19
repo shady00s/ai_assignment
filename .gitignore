@@ -6,3 +6,12 @@ __pycache__/
 .venv
 chunks.json
 faiss_index.bin
+
+src/task-manager-api/node_modules/
+src/task-manager-api/.env
+src/task-manager-api/dist/
+src/task-manager-api/build/
+src/task-manager-api/.next/
+src/task-manager-api/.vercel/
+src/task-manager-api/.claude/
+ 
