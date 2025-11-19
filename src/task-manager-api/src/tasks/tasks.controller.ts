@@ -14,7 +14,7 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { QueryTasksDto } from './dto/query-tasks.dto';
-import { Task } from './entities/task.entity';
+import { Task, TaskStatus } from './entities/task.entity';
 
 @Controller('tasks')
 export class TasksController {
@@ -53,5 +53,26 @@ export class TasksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     await this.tasksService.remove(id);
+  }
+
+  @Get('storage-backend')
+  getStorageBackend() {
+    return {
+      backend: this.tasksService.getStorageBackend(),
+      message: `Currently using ${this.tasksService.getStorageBackend()} storage backend`,
+    };
+  }
+
+  @Post('bulk')
+  @HttpCode(HttpStatus.CREATED)
+  async bulkCreate(@Body() createTaskDtos: CreateTaskDto[]): Promise<Task[]> {
+    return await this.tasksService.bulkCreate(createTaskDtos);
+  }
+
+  @Put('bulk/status')
+  async bulkUpdateStatus(
+    @Body() body: { ids: string[]; status: TaskStatus }
+  ): Promise<{ count: number }> {
+    return await this.tasksService.bulkUpdateStatus(body.ids, body.status);
   }
 }

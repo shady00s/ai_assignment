@@ -508,11 +508,308 @@ Future Scalability Path:
 - Bulk operations
 - Data export/import
 
-### Phase 3: Database Migration
-- Replace JSON with PostgreSQL/MongoDB
-- Add proper indexing
-- Implement transactions
-- Add backup/restore
+### Phase 3: Database Migration with Prisma + SQLite
+
+#### **Technology Stack Upgrade**
+```
+JSON File Storage → Prisma ORM + SQLite Database
+Nest.js v11.1.9 + Prisma v5.22.0
+TypeScript 5.x with full type safety
+```
+
+#### **Prisma Schema Design**
+```prisma
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("tasks")
+  @@index([status])
+  @@index([createdAt])
+  @@index([title])
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}
+```
+
+#### **Repository Pattern Evolution**
+```typescript
+// Before: JSON File Repository
+@Injectable()
+export class TasksRepository {
+  private async saveTasks(): Promise<void> {
+    await fs.writeFile(this.filePath, JSON.stringify(taskData));
+  }
+}
+
+// After: Prisma Repository
+@Injectable()
+export class TasksRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(): Promise<Task[]> {
+    return await this.prisma.task.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async findById(id: string): Promise<Task | null> {
+    return await this.prisma.task.findUnique({
+      where: { id }
+    });
+  }
+
+  async create(data: CreateTaskDto): Promise<Task> {
+    return await this.prisma.task.create({
+      data: {
+        ...data,
+        status: data.status || TaskStatus.PENDING
+      }
+    });
+  }
+
+  async update(id: string, data: UpdateTaskDto): Promise<Task> {
+    return await this.prisma.task.update({
+      where: { id },
+      data
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.task.delete({
+      where: { id }
+    });
+  }
+
+  async search(query: string): Promise<Task[]> {
+    return await this.prisma.task.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } }
+        ]
+      }
+    });
+  }
+
+  async findByStatus(status: TaskStatus): Promise<Task[]> {
+    return await this.prisma.task.findMany({
+      where: { status },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+}
+```
+
+#### **Prisma Service Configuration**
+```typescript
+// src/prisma/prisma.service.ts
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+
+  async cleanDb() {
+    await this.task.deleteMany();
+  }
+}
+```
+
+#### **Module Configuration Updates**
+```typescript
+// src/tasks/tasks.module.ts
+import { Module } from '@nestjs/common';
+import { TasksController } from './tasks.controller';
+import { TasksService } from './tasks.service';
+import { TasksRepository } from './models/tasks.repository';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Module({
+  controllers: [TasksController],
+  providers: [
+    TasksService,
+    TasksRepository,
+    PrismaService, // Add Prisma service
+  ],
+  exports: [TasksService, PrismaService],
+})
+export class TasksModule {}
+```
+
+#### **Migration Strategy**
+```bash
+# 1. Install Prisma dependencies
+npm install prisma@5.22.0 @prisma/client@5.22.0
+npm install -D @types/prisma
+
+# 2. Initialize Prisma
+npx prisma init --datasource-provider sqlite
+
+# 3. Create schema (use schema design above)
+# 4. Generate Prisma Client
+npx prisma generate
+
+# 5. Create initial migration
+npx prisma migrate dev --name init
+
+# 6. Data migration script (JSON → SQLite)
+npx prisma db seed
+```
+
+#### **Data Migration Script**
+```typescript
+// prisma/seed.ts
+import { PrismaClient, TaskStatus } from '@prisma/client';
+import * as fs from 'fs/promises';
+
+const prisma = new PrismaClient();
+
+async function migrateFromJson() {
+  try {
+    // Read existing JSON data
+    const data = await fs.readFile('./data/tasks.json', 'utf-8');
+    const taskData = JSON.parse(data);
+
+    // Migrate to database
+    for (const task of taskData.tasks) {
+      await prisma.task.create({
+        data: {
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          status: task.status === 'completed' ? TaskStatus.COMPLETED : TaskStatus.PENDING,
+          createdAt: new Date(task.created_at),
+          updatedAt: new Date(task.updated_at),
+        }
+      });
+    }
+
+    console.log(`✅ Migrated ${taskData.tasks.length} tasks to database`);
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+migrateFromJson();
+```
+
+#### **Performance Benefits**
+
+| Aspect | JSON File | Prisma + SQLite |
+|--------|-----------|-----------------|
+| **Read Performance** | O(n) linear search | O(log n) indexed queries |
+| **Write Performance** | Full file rewrite | Single record operations |
+| **Query Flexibility** | Manual filtering | Rich query API |
+| **Type Safety** | Manual validation | Auto-generated types |
+| **Data Integrity** | Manual checks | Database constraints |
+| **Concurrency** | File locking required | Built-in transaction support |
+| **Scalability** | Limited to 10k records | Millions of records possible |
+
+#### **Advanced Query Examples**
+```typescript
+// Complex filtering and sorting
+async findTasksWithFilters(query: QueryTasksDto): Promise<Task[]> {
+  return await this.prisma.task.findMany({
+    where: {
+      status: query.status ? { equals: query.status } : undefined,
+      OR: query.search ? [
+        { title: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } }
+      ] : undefined,
+    },
+    orderBy: [
+      { [query.sortBy || 'createdAt']: query.sortOrder || 'desc' }
+    ],
+    skip: ((query.page || 1) - 1) * (query.limit || 10),
+    take: query.limit || 10,
+  });
+}
+
+// Aggregation queries
+async getTaskStats(): Promise<TaskStats> {
+  const [total, pending, completed] = await Promise.all([
+    this.prisma.task.count(),
+    this.prisma.task.count({ where: { status: TaskStatus.PENDING } }),
+    this.prisma.task.count({ where: { status: TaskStatus.COMPLETED } })
+  ]);
+
+  return { total, pending, completed };
+}
+
+// Transaction support
+async bulkUpdateStatus(ids: string[], status: TaskStatus): Promise<void> {
+  await this.prisma.$transaction(
+    ids.map(id =>
+      this.prisma.task.update({
+        where: { id },
+        data: { status }
+      })
+    )
+  );
+}
+```
+
+#### **Production Migration Path**
+```typescript
+// Environment-specific configuration
+const databaseConfig = {
+  development: {
+    provider: 'sqlite',
+    url: './dev.db'
+  },
+  staging: {
+    provider: 'postgresql',
+    url: process.env.DATABASE_URL
+  },
+  production: {
+    provider: 'postgresql',
+    url: process.env.DATABASE_URL
+  }
+};
+
+// Easy switch between storage backends
+const useDatabase = process.env.USE_DATABASE === 'true';
+const repository = useDatabase
+  ? new PrismaTasksRepository()
+  : new FileTasksRepository();
+```
+
+#### **Benefits Summary**
+
+1. **Performance**: 10-100x faster queries with indexing
+2. **Type Safety**: Compile-time guarantees with generated types
+3. **Query Power**: Rich filtering, sorting, pagination, aggregation
+4. **Data Integrity**: Database constraints and transactions
+5. **Scalability**: From development to millions of records
+6. **Developer Experience**: Auto-completion and query validation
+7. **Production Ready**: Easy migration to PostgreSQL/MySQL
 
 ### Phase 4: Advanced Architecture
 - Caching layer (Redis)

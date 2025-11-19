@@ -1,66 +1,46 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { Task, TaskStatus } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { QueryTasksDto } from './dto/query-tasks.dto';
 import { TasksRepository } from './models/tasks.repository';
+import { PrismaTasksRepository } from './models/prisma-tasks.repository';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly tasksRepository: TasksRepository) {}
+  constructor(
+    @Inject('USE_JSON_STORAGE') private readonly useJsonStorage: boolean,
+    private readonly jsonRepository: TasksRepository,
+    private readonly prismaRepository: PrismaTasksRepository,
+  ) {}
+
+  private getRepository() {
+    return this.useJsonStorage ? this.jsonRepository : this.prismaRepository;
+  }
 
   async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const task: Task = {
-      id: '',
-      title: createTaskDto.title,
-      description: createTaskDto.description,
-      status: createTaskDto.status || TaskStatus.PENDING,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
+    if (this.useJsonStorage) {
+      const task: Task = {
+        id: '',
+        title: createTaskDto.title,
+        description: createTaskDto.description,
+        status: createTaskDto.status || TaskStatus.PENDING,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
 
-    return await this.tasksRepository.save(task);
+      return await this.jsonRepository.save(task);
+    } else {
+      return await this.prismaRepository.create(createTaskDto);
+    }
   }
 
   async findAll(query: QueryTasksDto): Promise<Task[]> {
-    let tasks = await this.tasksRepository.findAll();
-
-    if (query.status) {
-      tasks = tasks.filter(task => task.status === query.status);
-    }
-
-    if (query.search) {
-      const searchQuery = query.search.toLowerCase();
-      tasks = tasks.filter(task =>
-        task.title.toLowerCase().includes(searchQuery) ||
-        (task.description && task.description.toLowerCase().includes(searchQuery))
-      );
-    }
-
-    const sortBy = query.sortBy || 'created_at';
-    const sortOrder = query.sortOrder || 'desc';
-
-    tasks.sort((a, b) => {
-      const aValue = a[sortBy];
-      const bValue = b[sortBy];
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    const page = query.page || 1;
-    const limit = query.limit || 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-
-    return tasks.slice(startIndex, endIndex);
+    return await this.getRepository().findAll(query);
   }
 
   async findOne(id: string): Promise<Task> {
-    const task = await this.tasksRepository.findById(id);
+    const task = await this.getRepository().findById(id);
     if (!task) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
@@ -68,7 +48,7 @@ export class TasksService {
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {
-    const existingTask = await this.tasksRepository.findById(id);
+    const existingTask = await this.getRepository().findById(id);
     if (!existingTask) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
@@ -77,18 +57,30 @@ export class TasksService {
       throw new BadRequestException('No valid fields provided for update');
     }
 
-    return await this.tasksRepository.update(id, updateTaskDto);
+    if (this.useJsonStorage) {
+      return await this.jsonRepository.update(id, updateTaskDto);
+    } else {
+      const updatedTask = await this.prismaRepository.update(id, updateTaskDto);
+      if (!updatedTask) {
+        throw new NotFoundException(`Task with ID "${id}" not found`);
+      }
+      return updatedTask;
+    }
   }
 
   async remove(id: string): Promise<void> {
-    const task = await this.tasksRepository.findById(id);
+    const task = await this.getRepository().findById(id);
     if (!task) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
 
-    const deleted = await this.tasksRepository.delete(id);
-    if (!deleted) {
-      throw new BadRequestException(`Failed to delete task with ID "${id}"`);
+    if (this.useJsonStorage) {
+      const deleted = await this.jsonRepository.delete(id);
+      if (!deleted) {
+        throw new BadRequestException(`Failed to delete task with ID "${id}"`);
+      }
+    } else {
+      await this.prismaRepository.delete(id);
     }
   }
 
@@ -97,11 +89,35 @@ export class TasksService {
     pending: number;
     completed: number;
   }> {
-    const tasks = await this.tasksRepository.findAll();
-    return {
-      total: tasks.length,
-      pending: tasks.filter(task => task.status === TaskStatus.PENDING).length,
-      completed: tasks.filter(task => task.status === TaskStatus.COMPLETED).length,
-    };
+    if (this.useJsonStorage) {
+      const tasks = await this.jsonRepository.findAll();
+      return {
+        total: tasks.length,
+        pending: tasks.filter(task => task.status === TaskStatus.PENDING).length,
+        completed: tasks.filter(task => task.status === TaskStatus.COMPLETED).length,
+      };
+    } else {
+      return await this.prismaRepository.getStats();
+    }
+  }
+
+  // Advanced methods for Prisma backend
+  async bulkCreate(createTaskDtos: CreateTaskDto[]): Promise<Task[]> {
+    if (this.useJsonStorage) {
+      throw new BadRequestException('Bulk operations are only supported with database storage');
+    }
+    return await this.prismaRepository.bulkCreate(createTaskDtos);
+  }
+
+  async bulkUpdateStatus(ids: string[], status: TaskStatus): Promise<{ count: number }> {
+    if (this.useJsonStorage) {
+      throw new BadRequestException('Bulk operations are only supported with database storage');
+    }
+    return await this.prismaRepository.bulkUpdateStatus(ids, status);
+  }
+
+  // Method to check current storage backend
+  getStorageBackend(): 'json' | 'database' {
+    return this.useJsonStorage ? 'json' : 'database';
   }
 }

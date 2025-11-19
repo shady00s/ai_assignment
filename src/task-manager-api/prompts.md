@@ -1026,5 +1026,8 @@ i need more details about tasks model
  according to the given ARCHITIECTURE, i need to start implementing each  phase step by step, if there are any vauge implementation or the task needs more explaining, then ask me before you implement. do not estimate or guess anything without any prove or confirmation. ultrathink 
 
 
-
- 
+### BOUNS
+ now i want to add in the @ARCHITECTURE.md file the implementation of
+ replacing the JSON file with .sqlite implementation by using prisma.
+use context7 mcp for getting the compatible prisma version. then add
+the version into @SETUP.md  ultrathink

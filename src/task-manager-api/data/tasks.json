@@ -7,11 +7,19 @@
       "status": "completed",
       "created_at": "2025-11-19T20:22:44.118Z",
       "updated_at": "2025-11-19T20:22:55.665Z"
+    },
+    {
+      "id": "b0aaf56d-a405-4b78-9bb8-bacdd3b88403",
+      "title": "Database Test Task",
+      "description": "Testing with JSON storage",
+      "status": "pending",
+      "created_at": "2025-11-19T21:25:59.424Z",
+      "updated_at": "2025-11-19T21:25:59.425Z"
     }
   ],
   "metadata": {
-    "total_tasks": 1,
-    "last_updated": "2025-11-19T20:22:55.665Z",
+    "total_tasks": 2,
+    "last_updated": "2025-11-19T21:25:59.425Z",
     "version": "1.0.0"
   }
 }

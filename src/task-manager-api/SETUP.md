@@ -73,6 +73,9 @@ npm install class-validator@0.14.1
 npm install class-transformer@0.5.1
 npm install @nestjs/config@3.3.0
 npm install uuid@9.0.1
+
+# Database Dependencies (Optional - for SQLite + Prisma)
+npm install prisma@5.22.0 @prisma/client@5.22.0
 ```
 
 **Development Dependencies:**
@@ -173,7 +176,71 @@ touch data/tasks.json
 }
 ```
 
-### Step 6: Environment Setup
+### Step 6: Prisma Database Setup (Optional)
+
+**If you want to use SQLite + Prisma instead of JSON file storage:**
+
+```bash
+# Initialize Prisma with SQLite
+npx prisma init --datasource-provider sqlite
+
+# This creates:
+# - prisma/schema.prisma (database schema file)
+# - .env (environment variables with DATABASE_URL)
+```
+
+**Create Prisma Schema (`prisma/schema.prisma`):**
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("tasks")
+  @@index([status])
+  @@index([createdAt])
+  @@index([title])
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}
+```
+
+**Generate Prisma Client:**
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+**Add Prisma Scripts to `package.json`:**
+```json
+{
+  "scripts": {
+    // ... existing scripts
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:reset": "prisma migrate reset"
+  }
+}
+```
+
+### Step 7: Environment Setup
 
 **Create `.env` file:**
 ```env
@@ -181,8 +248,15 @@ touch data/tasks.json
 PORT=3000
 NODE_ENV=development
 
-# File Storage
+# Storage Configuration (Choose one)
+USE_JSON_STORAGE=true
+# DATABASE_URL="file:./dev.db"  # Uncomment for Prisma + SQLite
+
+# File Storage (for JSON storage)
 DATA_FILE_PATH=./data/tasks.json
+
+# Database Configuration (for Prisma + SQLite)
+# DATABASE_URL="file:./dev.db"
 
 # Validation
 MAX_TITLE_LENGTH=100
@@ -202,6 +276,13 @@ build/
 .env
 .env.local
 .env.*.local
+
+# Database files
+*.db
+*.db-journal
+dev.db
+prisma/dev.db*
+prisma/migrations/
 
 # Logs
 logs
@@ -241,6 +322,44 @@ npm install
 npm run start:dev
 
 # The API will be available at http://localhost:3000
+```
+
+### Choosing Storage Backend
+
+**Option 1: JSON File Storage (Default)**
+```bash
+# Use the default JSON file storage
+# No additional setup needed
+# Data is stored in ./data/tasks.json
+```
+
+**Option 2: SQLite + Prisma**
+```bash
+# Set up database storage
+1. Follow Step 6 above to configure Prisma
+2. Update .env file:
+   USE_JSON_STORAGE=false
+   DATABASE_URL="file:./dev.db"
+3. Generate database schema:
+   npm run db:migrate
+4. Start the application
+   npm run start:dev
+```
+
+### Database Management (Prisma Only)
+
+```bash
+# View and edit database in browser
+npm run db:studio
+
+# Reset database (delete all data)
+npm run db:reset
+
+# Generate new migration after schema changes
+npm run db:migrate
+
+# Regenerate Prisma Client
+npm run db:generate
 ```
 
 ### Production Mode

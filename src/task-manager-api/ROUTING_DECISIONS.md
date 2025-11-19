@@ -1,10 +1,10 @@
-# =ã Task Manager REST API - Routing & Design Decisions
+# =ï¿½ Task Manager REST API - Routing & Design Decisions
 
-## =Ë Overview
+## =ï¿½ Overview
 
 This document outlines the key routing decisions, error handling strategies, and validation approaches implemented in the Task Manager REST API.
 
-## =€ Route Structure & Decisions
+## =ï¿½ Route Structure & Decisions
 
 ### Base Route Configuration
 
@@ -49,7 +49,7 @@ Resource Endpoint: /tasks
    - `404 Not Found` - Resource not found
    - `500 Internal Server Error` - Server errors
 
-## =á Error Handling Strategy
+## =ï¿½ Error Handling Strategy
 
 ### Multi-Layer Error Handling
 
@@ -236,7 +236,149 @@ async getStats(): Promise<{ total: number; pending: number; completed: number }>
 }
 ```
 
-## <¯ Design Principles Applied
+## ðŸ—ƒï¸ **Prisma + SQLite Implementation Strategy**
+
+### **Routing Impact with Database Storage**
+
+The addition of Prisma + SQLite provides two implementation approaches while maintaining identical routing:
+
+#### **Dual Storage Backend Strategy**
+```typescript
+// src/tasks/tasks.service.ts
+@Injectable()
+export class TasksService {
+  constructor(
+    @Inject('USE_JSON_STORAGE') private readonly useJsonStorage: boolean,
+    private readonly jsonRepository: JsonTasksRepository,
+    private readonly prismaRepository: PrismaTasksRepository,
+  ) {}
+
+  async findAll(query: QueryTasksDto): Promise<Task[]> {
+    return this.useJsonStorage
+      ? await this.jsonRepository.findAll(query)  // JSON implementation
+      : await this.prismaRepository.findAll(query); // Prisma implementation
+  }
+}
+```
+
+### **Enhanced Query Capabilities with Prisma**
+
+#### **Advanced Filtering Strategy**
+```typescript
+// Prisma-powered query with database optimizations
+async findAll(query: QueryTasksDto): Promise<Task[]> {
+  return await this.prisma.task.findMany({
+    where: {
+      // âœ… Database-level filtering (vs manual array filtering)
+      status: query.status ? { equals: query.status } : undefined,
+      OR: query.search ? [
+        { title: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } }
+      ] : undefined,
+    },
+    orderBy: [
+      // âœ… Database-level sorting (vs manual array sorting)
+      { [query.sortBy || 'createdAt']: query.sortOrder || 'desc' }
+    ],
+    // âœ… Database-level pagination (vs manual array slicing)
+    skip: ((query.page || 1) - 1) * (query.limit || 10),
+    take: query.limit || 10,
+  });
+}
+```
+
+#### **Route Enhancement: Statistics Endpoint**
+```typescript
+// JSON Implementation (current)
+@Get('stats')
+async getStats() {
+  const tasks = await this.tasksService.findAll();
+  return {
+    total: tasks.length,
+    pending: tasks.filter(task => task.status === 'pending').length,
+    completed: tasks.filter(task => task.status === 'completed').length,
+  };
+}
+
+// Prisma Implementation (optimized)
+@Get('stats')
+async getStats() {
+  // âœ… Parallel database queries (vs sequential array processing)
+  const [total, pending, completed] = await Promise.all([
+    this.prisma.task.count(),
+    this.prisma.task.count({ where: { status: 'PENDING' } }),
+    this.prisma.task.count({ where: { status: 'COMPLETED' } }),
+  ]);
+
+  return { total, pending, completed };
+}
+```
+
+### **Error Handling Evolution**
+
+#### **Database-Specific Error Handling**
+```typescript
+async findById(id: string): Promise<Task> {
+  try {
+    const task = await this.prisma.task.findUnique({
+      where: { id },
+    });
+
+    if (!task) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+
+    return task;
+  } catch (error) {
+    // âœ… Handle database-specific errors
+    if (error.code === 'P2025') {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+    if (error.code === 'P2002') {
+      throw new ConflictException('Task already exists');
+    }
+    throw error; // Re-throw for global exception filter
+  }
+}
+```
+
+### **Transaction Support for Complex Routes**
+```typescript
+// Enhanced routes with database transactions
+@Post('bulk')
+async bulkCreate(@Body() createTaskDtos: CreateTaskDto[]): Promise<Task[]> {
+  return await this.prisma.$transaction(
+    createTaskDtos.map(dto =>
+      this.prisma.task.create({ data: dto })
+    )
+  );
+}
+
+@Put('bulk/status')
+async bulkUpdateStatus(
+  @Body() { ids, status }: { ids: string[], status: TaskStatus }
+): Promise<{ count: number }> {
+  const result = await this.prisma.task.updateMany({
+    where: { id: { in: ids } },
+    data: { status },
+  });
+
+  return { count: result.count };
+}
+```
+
+### **Backward Compatibility Strategy**
+
+The routing architecture maintains **100% backward compatibility**:
+
+1. **Identical Endpoints**: All routes remain `/api/tasks/*`
+2. **Same Request/Response Formats**: DTOs and entities unchanged
+3. **Consistent Error Handling**: Same error structure and status codes
+4. **Gradual Migration**: Switch via `USE_JSON_STORAGE` environment variable
+
+This dual-backend strategy allows teams to **start with JSON storage** and **migrate to Prisma** when performance requirements increase, without any API breaking changes.
+
+## ðŸŽ¯ Design Principles Applied
 
 ### 1. **SOLID Principles**
 - **Single Responsibility**: Each class has one purpose
@@ -279,7 +421,7 @@ async getStats(): Promise<{ total: number; pending: number; completed: number }>
 - **Database Migration**: Repository pattern abstracts storage layer
 - **Event System**: Built-in Nest.js event handling for side effects
 
-## =Ê Performance Considerations
+## =ï¿½ Performance Considerations
 
 ### Current Optimizations
 1. **In-Memory Caching**: JSON file loaded once at startup
