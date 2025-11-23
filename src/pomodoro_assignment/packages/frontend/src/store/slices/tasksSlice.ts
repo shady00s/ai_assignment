@@ -117,7 +117,7 @@ export const updateTask = createAsyncThunk<
       const token = state.auth.token;
 
       const response = await fetch(`/api/tasks/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : '',

@@ -1,4 +1,37 @@
 export const designTokens = {
+  // Modern breakpoints following industry standards
+  breakpoints: {
+    mobile: {
+      xs: '320px',   // Small phones
+      sm: '375px',   // Large phones
+      md: '425px',   // Extra large phones
+    },
+    tablet: {
+      sm: '640px',   // Small tablets
+      md: '768px',   // Medium tablets
+      lg: '1024px',  // Large tablets
+    },
+    desktop: {
+      sm: '1280px',  // Small desktops
+      md: '1440px',  // Medium desktops
+      lg: '1920px',  // Large desktops
+      xl: '2560px',  // Extra large desktops
+    },
+  },
+
+  // Media queries for easy use
+  mediaQueries: {
+    mobile: `@media (max-width: ${425}px)`,
+    tablet: `@media (min-width: 426px) and (max-width: 1023px)`,
+    desktop: `@media (min-width: 1024px)`,
+    // Mobile-first approach
+    mobileUp: `@media (min-width: 320px)`,
+    tabletUp: `@media (min-width: 768px)`,
+    desktopUp: `@media (min-width: 1024px)`,
+    largeDesktopUp: `@media (min-width: 1440px)`,
+    extraLargeDesktopUp: `@media (min-width: 1920px)`,
+  },
+
   colors: {
     primary: {
       main: '#7A8B7F',      // Moss Green
@@ -35,13 +68,43 @@ export const designTokens = {
       secondary: 'Lora, serif',
     },
     fontSize: {
-      xs: '12px',
-      sm: '14px',
-      base: '16px',
-      lg: '18px',
-      xl: '24px',
-      '2xl': '32px',
-      '3xl': '48px',
+      xs: '10px',
+      sm: '12px',
+      base: '14px',
+      lg: '16px',
+      xl: '18px',
+      '2xl': '24px',
+      '3xl': '32px',
+      '4xl': '40px',
+      '5xl': '48px',
+      '6xl': '64px',
+      // Responsive font sizes
+      mobile: {
+        xs: '10px',
+        sm: '12px',
+        base: '14px',
+        lg: '16px',
+      },
+      tablet: {
+        xs: '12px',
+        sm: '14px',
+        base: '16px',
+        lg: '18px',
+        xl: '20px',
+        '2xl': '24px',
+        '3xl': '32px',
+      },
+      desktop: {
+        xs: '12px',
+        sm: '14px',
+        base: '16px',
+        lg: '18px',
+        xl: '20px',
+        '2xl': '24px',
+        '3xl': '32px',
+        '4xl': '40px',
+        '5xl': '48px',
+      },
     },
     fontWeight: {
       regular: 400,
@@ -60,8 +123,31 @@ export const designTokens = {
     xs: '4px',
     sm: '8px',
     md: '16px',
-    lg: '32px',
-    xl: '64px',
+    lg: '24px',
+    xl: '32px',
+    xxl: '48px',
+    // Responsive spacing
+    mobile: {
+      xs: '4px',
+      sm: '8px',
+      md: '12px',
+      lg: '16px',
+    },
+    tablet: {
+      xs: '6px',
+      sm: '10px',
+      md: '16px',
+      lg: '24px',
+      xl: '32px',
+    },
+    desktop: {
+      xs: '8px',
+      sm: '12px',
+      md: '16px',
+      lg: '24px',
+      xl: '32px',
+      xxl: '48px',
+    },
   },
 
   borderRadius: {

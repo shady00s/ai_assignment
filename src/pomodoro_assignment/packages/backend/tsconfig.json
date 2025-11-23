@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/auth/*": ["./src/auth/*"],
+      "@/users/*": ["./src/users/*"],
+      "@/tasks/*": ["./src/tasks/*"],
+      "@/sessions/*": ["./src/sessions/*"],
+      "@/teams/*": ["./src/teams/*"],
+      "@/achievements/*": ["./src/achievements/*"],
+      "@/challenges/*": ["./src/challenges/*"],
+      "@/analytics/*": ["./src/analytics/*"],
+      "@/notifications/*": ["./src/notifications/*"],
+      "@/core/*": ["./src/core/*"],
+      "@/common/*": ["./src/common/*"],
+      "@/config/*": ["./src/config/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+}

@@ -1,0 +1,256 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+ }
+
+// ============================================
+// CORE MODELS
+// ============================================
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  password        String?  // Password field for frontend compatibility
+  firstName       String   //  compatibility
+  lastName        String   //  compatibility
+  avatar          String?
+  teamId          String?  // ✅ Direct field for frontend
+  level           Int      @default(1)
+  xp              Int      @default(0)
+  streak          Int      @default(0)
+  totalFocusTime  Int      @default(0)  // ✅ Computed field (frontend)
+  tasksCompleted  Int      @default(0)  // ✅ Computed field (frontend)
+  qualityScore    Float    @default(0)  // ✅ Computed field (frontend)
+  wellnessScore   Float    @default(0)  // ✅ Computed field (frontend)
+  preferences     String?  // JSON string for SQLite compatibility
+  settings        String?  // JSON string for SQLite compatibility
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sessions       Session[]
+  tasks          Task[]          @relation("TaskCreator")
+  taskAssignments Task[]          @relation("TaskAssignee")
+  teamMembers    TeamMember[]
+  achievements   UserAchievement[]
+  notifications  Notification[]
+  currentTeam    Team?     @relation("TeamOwner")
+
+  @@map("users")
+  @@index([email])
+  @@index([createdAt])
+  @@index([level, xp])
+  @@index([teamId])
+}
+
+model Team {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  avatar        String?
+  ownerId       String   @unique @map("owner_id")  //  compatibility
+  settings      String?  // JSON string for SQLite compatibility
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  owner         User       @relation("TeamOwner", fields: [ownerId], references: [id])
+  members       TeamMember[]
+  tasks         Task[]
+  challenges    TeamChallenge[]
+
+  @@map("teams")
+  @@index([createdAt])
+  @@index([ownerId])
+}
+
+model TeamMember {
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  teamId String @map("team_id")
+  role   String @default("MEMBER")  // 'OWNER' | 'ADMIN' | 'MEMBER'
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model Task {
+  id                String     @id @default(cuid())
+  title             String
+  description       String?
+  priority          String   @default("MEDIUM")      // : 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+  status            String   @default("TODO")         // : 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+  dueDate           DateTime?  @map("due_date")
+  estimatedPomodoros Int       @default(1)  //  compatibility
+  completedPomodoros Int       @default(0)  //  compatibility
+  estimatedMinutes   Int?      // Computed: estimatedPomodoros * 25
+  actualMinutes      Int?      // Computed from sessions
+  assigneeId         String?   @map("assignee_id")
+  creatorId          String    @map("creator_id")
+  teamId             String?   @map("team_id")
+  tags              String?  // JSON array string for SQLite compatibility: '["urgent","work"]'
+  complexity        Int       @default(1)
+  completedAt       DateTime? @map("completed_at")   //  compatibility
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  creator   User     @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee  User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  team      Team?    @relation(fields: [teamId], references: [id])
+  sessions  Session[]
+  dependencies TaskDependency[] @relation("DependentTask")
+  dependents   TaskDependency[] @relation("PrerequisiteTask")
+
+  @@map("tasks")
+  @@index([assigneeId, status])
+  @@index([teamId, dueDate])
+  @@index([creatorId])
+  @@index([status, priority])
+}
+
+model TaskDependency {
+  id               String @id @default(cuid())
+  dependentTaskId  String @map("dependent_task_id")
+  prerequisiteId   String @map("prerequisite_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  dependentTask  Task @relation("DependentTask", fields: [dependentTaskId], references: [id], onDelete: Cascade)
+  prerequisite    Task @relation("PrerequisiteTask", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@unique([dependentTaskId, prerequisiteId])
+  @@map("task_dependencies")
+}
+
+model Session {
+  id          String      @id @default(cuid())
+  userId      String      @map("user_id")
+  taskId      String?     @map("task_id")
+  type        String      @default("POMODORO")  // 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK' | 'CUSTOM'
+  duration    Int         // in minutes
+  startTime   DateTime    @map("started_at")   //  naming
+  endTime     DateTime?   @map("completed_at") //  naming
+  notes       String?
+  quality     Int?        // 1-5 rating
+  completed   Boolean     @default(false)      //  compatibility
+  interruptions Int       @default(0)          //  compatibility
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  user User   @relation(fields: [userId], references: [id])
+  task Task?  @relation(fields: [taskId], references: [id])
+
+  @@map("sessions")
+  @@index([userId, startTime])
+  @@index([userId, type])
+  @@index([endTime])
+  @@index([taskId])
+  @@index([completed])
+}
+
+// ============================================
+// GAMIFICATION MODELS
+// ============================================
+
+model Achievement {
+  id          String @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  category    String  // 'FOCUS_MASTERY' | 'CONSISTENCY' | 'TEAM_COLLABORATION' | 'WELLNESS_MINDFULNESS'
+  xpValue     Int
+  criteria    String  // JSON string for SQLite compatibility
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+  @@index([category])
+  @@index([isActive])
+}
+
+model UserAchievement {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  achievementId String  @map("achievement_id")
+  unlockedAt   DateTime @default(now()) @map("unlocked_at")
+  progress     String?  // JSON string for SQLite compatibility
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+  @@map("user_achievements")
+}
+
+model TeamChallenge {
+  id          String   @id @default(cuid())
+  teamId      String   @map("team_id")
+  name        String
+  description String?
+  type        String   // e.g., "FOCUS_TIME", "TASK_COMPLETION"
+  targetValue Int      @map("target_value")
+  currentValue Int     @default(0) @map("current_value")
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@map("team_challenges")
+  @@index([teamId])
+  @@index([isActive])
+  @@index([endDate])
+}
+
+// ============================================
+// NOTIFICATION MODEL
+// ============================================
+
+model Notification {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  type         String    // e.g., "ACHIEVEMENT", "TEAM_UPDATE", "REMINDER"
+  title        String
+  message      String
+  read         Boolean   @default(false)
+  entityId     String?   @map("entity_id")     // Related entity ID (task, achievement, etc.)
+  entityType   String?   @map("entity_type")   // Related entity type
+  data         String?   // JSON string for SQLite compatibility
+  readAt       DateTime? @map("read_at")
+  scheduledFor DateTime? @map("scheduled_for") // Scheduled delivery time
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+  @@index([userId])
+  @@index([read])
+  @@index([readAt])
+  @@index([scheduledFor])
+  @@index([createdAt])
+}

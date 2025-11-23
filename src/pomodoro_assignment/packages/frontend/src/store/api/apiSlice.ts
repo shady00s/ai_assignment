@@ -16,6 +16,8 @@ import {
   CreateSessionRequest,
   FocusAnalytics,
   WellnessAnalytics,
+  TeamAnalytics,
+  Notification,
   TaskFilters,
   TaskSort,
   SessionFilters,
@@ -31,6 +33,7 @@ export const tagTypes = [
   'UserAchievement',
   'Challenge',
   'Analytics',
+  'Notification',
 ] as const;
 
 export const apiSlice = createApi({
@@ -351,7 +354,7 @@ export const apiSlice = createApi({
       providesTags: ['Analytics'],
     }),
 
-    getTeamAnalytics: builder.query<any, { teamId: string; startDate?: string; endDate?: string }>({
+    getTeamAnalytics: builder.query<TeamAnalytics, { teamId: string; startDate?: string; endDate?: string }>({
       query: ({ teamId, startDate, endDate }) => {
         const params = new URLSearchParams();
         if (startDate) params.set('startDate', startDate);
@@ -362,27 +365,30 @@ export const apiSlice = createApi({
     }),
 
     // Notification endpoints
-    getNotifications: builder.query<any[], { unread?: boolean; limit?: number }>({
+    getNotifications: builder.query<Notification[], { unread?: boolean; limit?: number }>({
       query: ({ unread, limit }) => {
         const params = new URLSearchParams();
         if (unread !== undefined) params.set('unread', unread.toString());
         if (limit) params.set('limit', limit.toString());
         return `notifications?${params.toString()}`;
       },
+      providesTags: ['Notification'],
     }),
 
-    markNotificationAsRead: builder.mutation<void, string>({
+    markNotificationAsRead: builder.mutation<Notification, string>({
       query: (notificationId) => ({
         url: `notifications/${notificationId}/read`,
         method: 'POST',
       }),
+      invalidatesTags: ['Notification'],
     }),
 
-    markAllNotificationsAsRead: builder.mutation<void, void>({
+    markAllNotificationsAsRead: builder.mutation<Notification[], void>({
       query: () => ({
         url: 'notifications/read-all',
         method: 'POST',
       }),
+      invalidatesTags: ['Notification'],
     }),
   }),
 });

@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import styled from 'styled-components';
 import { CircularTimer } from '../../organisms/CircularTimer';
 import {
   selectTimerState,
@@ -16,8 +17,344 @@ import {
   pauseTimer,
   skipSession,
   setSessionType,
-  decrementTime,
 } from '../../../store';
+
+const TimerContainer = styled.div`
+  padding: ${({ theme }) => theme.spacing.mobile.md};
+  max-width: 100%;
+  margin: 0 auto;
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    padding: ${({ theme }) => theme.spacing.tablet.lg};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    padding: ${({ theme }) => theme.spacing.xl};
+    max-width: 1200px;
+  }
+`;
+
+const SessionTypeSelector = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.mobile.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.mobile.xl};
+  flex-wrap: wrap;
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    gap: ${({ theme }) => theme.spacing.tablet.md};
+    margin-bottom: ${({ theme }) => theme.spacing.tablet.xl};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    gap: ${({ theme }) => theme.spacing.lg};
+    margin-bottom: ${({ theme }) => theme.spacing['2xl']};
+  }
+`;
+
+const SessionButton = styled.button<{ $active: boolean; $color: string; $disabled: boolean }>`
+  padding: ${({ theme }) => theme.spacing.mobile.sm} ${({ theme }) => theme.spacing.mobile.md};
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  background: ${({ $active, $color }) => $active ? $color : 'transparent'};
+  color: ${({ $active, $color }) => $active ? 'white' : '#8B7D7B'};
+  border: 2px solid ${({ $color }) => $color};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ $disabled }) => $disabled ? 0.6 : 1};
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.mobile.sm};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    padding: ${({ theme }) => theme.spacing.tablet.sm} ${({ theme }) => theme.spacing.tablet.md};
+    font-size: ${({ theme }) => theme.typography.fontSize.tablet.sm};
+    gap: ${({ theme }) => theme.spacing.tablet.sm};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    gap: ${({ theme }) => theme.spacing.sm};
+  }
+
+  &:hover:not(:disabled) {
+    background: ${({ $active, $color }) => $active ? $color : `${$color}20`};
+  }
+`;
+
+const TimerDisplay = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: ${({ theme }) => theme.spacing.mobile.xl};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    margin-bottom: ${({ theme }) => theme.spacing.tablet.xl};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    margin-bottom: ${({ theme }) => theme.spacing['2xl']};
+  }
+`;
+
+const TimerCard = styled.div`
+  padding: ${({ theme }) => theme.spacing.mobile.lg};
+  background: linear-gradient(135deg, #F8F9FA 0%, #E8D8C8 100%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(127, 168, 112, 0.1);
+  border-radius: ${({ theme }) => theme.spacing.mobile['3xl']};
+  backdrop-filter: blur(10px);
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    padding: ${({ theme }) => theme.spacing.tablet.xl};
+    border-radius: ${({ theme }) => theme.spacing.tablet['3xl']};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    padding: 40px;
+    border-radius: 32px;
+  }
+`;
+
+const TimerContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.mobile.xl};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    gap: ${({ theme }) => theme.spacing.tablet.xl};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    gap: 32px;
+  }
+`;
+
+const CircularTimerWrapper = styled.div`
+  position: relative;
+  filter: drop-shadow(0 8px 24px rgba(127, 168, 112, 0.15));
+`;
+
+const SessionCounter = styled.div`
+  text-align: center;
+  background: linear-gradient(135deg, #7FA870 0%, #8FBC8F 100%);
+  padding: ${({ theme }) => theme.spacing.mobile.md} ${({ theme }) => theme.spacing.mobile.xl};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  color: white;
+  box-shadow: 0 4px 16px rgba(127, 168, 112, 0.25);
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    padding: ${({ theme }) => theme.spacing.tablet.md} ${({ theme }) => theme.spacing.tablet.xl};
+    border-radius: ${({ theme }) => theme.borderRadius.xl};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    padding: 16px 32px;
+    border-radius: 20px;
+  }
+`;
+
+const CounterLabel = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile.xs};
+  opacity: 0.9;
+  margin-bottom: ${({ theme }) => theme.spacing.mobile.xs};
+  font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    font-size: ${({ theme }) => theme.typography.fontSize.tablet.sm};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    font-size: 13px;
+  }
+`;
+
+const CounterValue = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile['2xl']};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  font-family: ${({ theme }) => theme.typography.fontFamily.secondary};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    font-size: ${({ theme }) => theme.typography.fontSize.tablet['3xl']};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    font-size: 28px;
+  }
+`;
+
+const TimerControls = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.mobile.md};
+  margin-bottom: ${({ theme }) => theme.spacing.mobile.xl};
+  flex-wrap: wrap;
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    gap: ${({ theme }) => theme.spacing.tablet.lg};
+    margin-bottom: ${({ theme }) => theme.spacing.tablet.xl};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    gap: ${({ theme }) => theme.spacing.lg};
+    margin-bottom: 48px;
+  }
+`;
+
+const ControlButton = styled.button<{ $variant: 'primary' | 'secondary' | 'danger' | 'warning'; $disabled?: boolean }>`
+  padding: ${({ theme }) => theme.spacing.mobile.lg} ${({ theme }) => theme.spacing.mobile.xl};
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  min-width: ${({ theme }) => theme.spacing.mobile['2xl']};
+  height: 60px;
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ $disabled }) => $disabled ? 0.6 : 1};
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.spacing.mobile.sm};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    padding: ${({ theme }) => theme.spacing.tablet.lg} ${({ theme }) => theme.spacing.tablet.xl};
+    font-size: ${({ theme }) => theme.typography.fontSize.tablet.lg};
+    min-width: ${({ theme }) => theme.spacing.tablet['2xl']};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    padding: 18px 36px;
+    font-size: 18px;
+    min-width: 150px;
+    gap: 8px;
+  }
+
+  ${({ $variant }) => {
+    switch ($variant) {
+      case 'primary':
+        return `
+          background: linear-gradient(135deg, #7FA870 0%, #8FBC8F 100%);
+          color: white;
+          border: none;
+          box-shadow: 0 6px 20px rgba(127, 168, 112, 0.3);
+        `;
+      case 'warning':
+        return `
+          background: linear-gradient(135deg, #F4A261 0%, #F5B789 100%);
+          color: white;
+          border: none;
+          box-shadow: 0 6px 20px rgba(244, 162, 97, 0.3);
+        `;
+      case 'danger':
+        return `
+          background: linear-gradient(135deg, #C85A5A 0%, #D57A7A 100%);
+          color: white;
+          border: none;
+        `;
+      case 'secondary':
+        return `
+          background: transparent;
+          color: #8B7D7B;
+          border: 2px solid #D4C4B0;
+        `;
+      default:
+        return '';
+    }
+  }}
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+`;
+
+const StatsGrid = styled.section`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: ${({ theme }) => theme.spacing.mobile.lg};
+  max-width: 680px;
+  margin: 0 auto;
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: ${({ theme }) => theme.spacing.tablet.lg};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+`;
+
+const StatCard = styled.div<{ $borderColor: string }>`
+  text-align: center;
+  padding: ${({ theme }) => theme.spacing.mobile.lg};
+  background: linear-gradient(135deg, #F8F9FA 0%, #F0E6DC 100%);
+  border: 1px solid ${({ $borderColor }) => $borderColor};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    padding: ${({ theme }) => theme.spacing.tablet.lg};
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    padding: 24px;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const StatIcon = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile['2xl']};
+  margin-bottom: ${({ theme }) => theme.spacing.mobile.sm};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    font-size: 24px;
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    font-size: 24px;
+  }
+`;
+
+const StatLabel = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile.sm};
+  color: #8B7D7B;
+  margin-bottom: ${({ theme }) => theme.spacing.mobile.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    font-size: 13px;
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    font-size: 13px;
+  }
+`;
+
+const StatValue = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.mobile.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  color: #2C3E50;
+  font-family: ${({ theme }) => theme.typography.fontFamily.secondary};
+
+  ${({ theme }) => theme.mediaQueries.tablet} {
+    font-size: 18px;
+  }
+
+  ${({ theme }) => theme.mediaQueries.desktop} {
+    font-size: 18px;
+  }
+`;
 
 interface TimerScreenProps {
   className?: string;
@@ -36,42 +373,10 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ className }) => {
   const shortBreakDuration = useSelector(selectShortBreakDuration);
   const longBreakDuration = useSelector(selectLongBreakDuration);
 
-  // Refs for timer management
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
   // Calculate progress for circular timer - memoized for performance
   const progress = useMemo(() => {
     return totalTime > 0 ? (totalTime - remainingTime) / totalTime : 0;
   }, [totalTime, remainingTime]);
-
-  // Timer effect - decrement time every second when running
-  useEffect(() => {
-    // Clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    // Start new interval if timer is running
-    if (isRunning && remainingTime > 0) {
-      intervalRef.current = setInterval(() => {
-        dispatch(decrementTime());
-      }, 1000);
-    }
-
-    // Auto-complete when timer reaches zero
-    if (isRunning && remainingTime === 0) {
-      handleComplete();
-    }
-
-    // Cleanup function
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isRunning, remainingTime, dispatch]);
 
   // Handle timer control actions with proper error handling
   const handleStart = () => {
@@ -86,6 +391,13 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ className }) => {
     // Dispatch skip action for now (we'll implement complete later)
     dispatch(skipSession());
   };
+
+  // Auto-complete when timer reaches zero
+  useEffect(() => {
+    if (isRunning && remainingTime === 0) {
+      handleComplete();
+    }
+  }, [isRunning, remainingTime, dispatch]);
 
   const handleSkip = () => {
     dispatch(skipSession());
@@ -126,323 +438,103 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ className }) => {
   };
 
   return (
-    <div className={className}>
-      {/* Session Type Selector - Enhanced with accessibility */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '12px',
-          marginBottom: '40px',
-          flexWrap: 'wrap',
-        }}
-      >
+    <TimerContainer className={className}>
+      {/* Session Type Selector */}
+      <SessionTypeSelector>
         {sessionTypes.map(({ type, label, icon, color }) => (
-          <button
+          <SessionButton
             key={type}
             onClick={() => handleSessionTypeChange(type)}
-            disabled={isRunning}
-            style={{
-              padding: '12px 20px',
-              background: sessionType === type ? color : 'transparent',
-              color: sessionType === type ? 'white' : '#8B7D7B',
-              border: `2px solid ${color}`,
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: isRunning ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              opacity: isRunning ? 0.6 : 1,
-            }}
+            $active={sessionType === type}
+            $color={color}
+            $disabled={isRunning}
           >
-            <span style={{ marginRight: '6px' }}>{icon}</span> {label}
-          </button>
+            <span>{icon}</span> {label}
+          </SessionButton>
         ))}
-      </div>
+      </SessionTypeSelector>
 
       {/* Main Timer Display */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: '40px',
-        }}
-      >
-        <div
-          style={{
-            padding: '40px',
-            background: 'linear-gradient(135deg, #F8F9FA 0%, #E8D8C8 100%)',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
-            border: '1px solid rgba(127, 168, 112, 0.1)',
-            borderRadius: '32px',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '32px',
-          }}>
-            {/* Enhanced Circular Timer */}
-            <div style={{
-              position: 'relative',
-              filter: 'drop-shadow(0 8px 24px rgba(127, 168, 112, 0.15))',
-            }}>
+      <TimerDisplay>
+        <TimerCard>
+          <TimerContent>
+            {/* Circular Timer */}
+            <CircularTimerWrapper>
               <CircularTimer
-                size={320}
-                strokeWidth={14}
+                size={280}
+                strokeWidth={12}
                 showControls={false}
                 progress={progress}
                 remainingTime={remainingTime}
                 sessionType={sessionType}
               />
-            </div>
+            </CircularTimerWrapper>
 
-            {/* Session Counter with enhanced styling */}
-            <div style={{
-              textAlign: 'center',
-              background: 'linear-gradient(135deg, #7FA870 0%, #8FBC8F 100%)',
-              padding: '16px 32px',
-              borderRadius: '20px',
-              color: 'white',
-              boxShadow: '0 4px 16px rgba(127, 168, 112, 0.25)',
-            }}>
-              <div style={{
-                fontSize: '13px',
-                opacity: 0.9,
-                marginBottom: '4px',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '500',
-              }}>
-                Sessions Completed Today
-              </div>
-              <div
-                style={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  fontFamily: 'Lora, serif',
-                }}
-              >
-                {sessionsCompleted}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* Session Counter */}
+            <SessionCounter>
+              <CounterLabel>Sessions Completed Today</CounterLabel>
+              <CounterValue>{sessionsCompleted}</CounterValue>
+            </SessionCounter>
+          </TimerContent>
+        </TimerCard>
+      </TimerDisplay>
 
-      {/* Enhanced Timer Controls with better accessibility */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '16px',
-          marginBottom: '48px',
-          flexWrap: 'wrap',
-        }}
-      >
+      {/* Timer Controls */}
+      <TimerControls>
         {!isRunning ? (
-          <button
+          <ControlButton
             onClick={handleStart}
-            style={{
-              padding: '18px 36px',
-              fontSize: '18px',
-              minWidth: '150px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #7FA870 0%, #8FBC8F 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '16px',
-              boxShadow: '0 6px 20px rgba(127, 168, 112, 0.3)',
-              cursor: 'pointer',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-            }}
+            $variant="primary"
           >
-            <span style={{ marginRight: '8px' }}>▶️</span> {isPaused ? 'Resume' : 'Start'}
-          </button>
+            <span>▶️</span> {isPaused ? 'Resume' : 'Start'}
+          </ControlButton>
         ) : (
-          <button
+          <ControlButton
             onClick={handlePause}
-            style={{
-              padding: '18px 36px',
-              fontSize: '18px',
-              minWidth: '150px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #F4A261 0%, #F5B789 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '16px',
-              boxShadow: '0 6px 20px rgba(244, 162, 97, 0.3)',
-              cursor: 'pointer',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-            }}
+            $variant="warning"
           >
-            <span style={{ marginRight: '8px' }}>⏸️</span> Pause
-          </button>
+            <span>⏸️</span> Pause
+          </ControlButton>
         )}
 
-        <button
+        <ControlButton
           onClick={handleSkip}
-          disabled={!isRunning && !isPaused}
-          style={{
-            padding: '18px 36px',
-            fontSize: '18px',
-            minWidth: '150px',
-            height: '60px',
-            backgroundColor: 'transparent',
-            color: '#8B7D7B',
-            border: '2px solid #D4C4B0',
-            borderRadius: '16px',
-            cursor: (!isRunning && !isPaused) ? 'not-allowed' : 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s ease',
-            opacity: (!isRunning && !isPaused) ? 0.6 : 1,
-          }}
+          $variant="secondary"
+          $disabled={!isRunning && !isPaused}
         >
-          <span style={{ marginRight: '8px' }}>⏭️</span> Skip
-        </button>
+          <span>⏭️</span> Skip
+        </ControlButton>
 
-        <button
+        <ControlButton
           onClick={handleComplete}
-          disabled={!isRunning && !isPaused}
-          style={{
-            padding: '18px 36px',
-            fontSize: '18px',
-            minWidth: '150px',
-            height: '60px',
-            background: 'linear-gradient(135deg, #C85A5A 0%, #D57A7A 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '16px',
-            cursor: (!isRunning && !isPaused) ? 'not-allowed' : 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s ease',
-            opacity: (!isRunning && !isPaused) ? 0.6 : 1,
-          }}
+          $variant="danger"
+          $disabled={!isRunning && !isPaused}
         >
-          <span style={{ marginRight: '8px' }}>✅</span> Complete
-        </button>
-      </div>
+          <span>✅</span> Complete
+        </ControlButton>
+      </TimerControls>
 
-      {/* Enhanced Quick Stats */}
-      <section
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '20px',
-          maxWidth: '680px',
-          margin: '0 auto',
-        }}
-      >
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '24px',
-            background: 'linear-gradient(135deg, #F8F9FA 0%, #F0E6DC 100%)',
-            border: '1px solid rgba(127, 168, 112, 0.1)',
-            borderRadius: '20px',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-          }}
-        >
-          <div style={{
-            fontSize: '24px',
-            marginBottom: '8px',
-          }}>
-            🍅
-          </div>
-          <div style={{
-            fontSize: '13px',
-            color: '#8B7D7B',
-            marginBottom: '6px',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '500',
-          }}>
-            Focus Duration
-          </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#2C3E50',
-            fontFamily: 'Lora, serif',
-          }}>
-            {formatDuration(Number(workDuration))}
-          </div>
-        </div>
+      {/* Quick Stats */}
+      <StatsGrid>
+        <StatCard $borderColor="rgba(127, 168, 112, 0.1)">
+          <StatIcon>🍅</StatIcon>
+          <StatLabel>Focus Duration</StatLabel>
+          <StatValue>{formatDuration(Number(workDuration))}</StatValue>
+        </StatCard>
 
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '24px',
-            background: 'linear-gradient(135deg, #F8F9FA 0%, #F0E6DC 100%)',
-            border: '1px solid rgba(244, 162, 97, 0.1)',
-            borderRadius: '20px',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-          }}
-        >
-          <div style={{
-            fontSize: '24px',
-            marginBottom: '8px',
-          }}>
-            ☕
-          </div>
-          <div style={{
-            fontSize: '13px',
-            color: '#8B7D7B',
-            marginBottom: '6px',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '500',
-          }}>
-            Short Break
-          </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#2C3E50',
-            fontFamily: 'Lora, serif',
-          }}>
-            {formatDuration(Number(shortBreakDuration))}
-          </div>
-        </div>
+        <StatCard $borderColor="rgba(244, 162, 97, 0.1)">
+          <StatIcon>☕</StatIcon>
+          <StatLabel>Short Break</StatLabel>
+          <StatValue>{formatDuration(Number(shortBreakDuration))}</StatValue>
+        </StatCard>
 
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '24px',
-            background: 'linear-gradient(135deg, #F8F9FA 0%, #F0E6DC 100%)',
-            border: '1px solid rgba(233, 196, 106, 0.1)',
-            borderRadius: '20px',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-          }}
-        >
-          <div style={{
-            fontSize: '24px',
-            marginBottom: '8px',
-          }}>
-            🌿
-          </div>
-          <div style={{
-            fontSize: '13px',
-            color: '#8B7D7B',
-            marginBottom: '6px',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '500',
-          }}>
-            Long Break
-          </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#2C3E50',
-            fontFamily: 'Lora, serif',
-          }}>
-            {formatDuration(Number(longBreakDuration))}
-          </div>
-        </div>
-      </section>
-    </div>
+        <StatCard $borderColor="rgba(233, 196, 106, 0.1)">
+          <StatIcon>🌿</StatIcon>
+          <StatLabel>Long Break</StatLabel>
+          <StatValue>{formatDuration(Number(longBreakDuration))}</StatValue>
+        </StatCard>
+      </StatsGrid>
+    </TimerContainer>
   );
 };
 

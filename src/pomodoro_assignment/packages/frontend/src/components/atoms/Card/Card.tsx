@@ -12,6 +12,7 @@ interface CardProps {
   backgroundColor?: string;
   borderColor?: string;
   fullWidth?: boolean;
+  style?: React.CSSProperties;
 }
 
 const StyledCard = styled.div<{
@@ -86,6 +87,7 @@ export const Card: React.FC<CardProps> = ({
   backgroundColor,
   borderColor,
   fullWidth = false,
+  style,
 }) => {
   return (
     <StyledCard
@@ -107,6 +109,7 @@ export const Card: React.FC<CardProps> = ({
           onClick();
         }
       } : undefined}
+      style={style}
     >
       {children}
     </StyledCard>

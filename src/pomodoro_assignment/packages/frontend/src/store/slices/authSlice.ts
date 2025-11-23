@@ -164,7 +164,36 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        state.user = {
+          ...action.payload.user,
+          // For existing users, assume they have preferences if not explicitly returned
+          preferences: action.payload.user.preferences || {
+            workDuration: 25, // Default to indicate they don't need onboarding
+            shortBreakDuration: 5,
+            longBreakDuration: 15,
+            longBreakInterval: 4,
+            autoStartBreaks: false,
+            autoStartWork: false,
+            soundEnabled: true,
+            volume: 70,
+            ambientSound: 'forest' as const,
+            darkMode: false,
+            notifications: {
+              achievements: true,
+              teamUpdates: true,
+              weeklyReports: true,
+              deadlineReminders: true,
+              wellnessReminders: true,
+            },
+            wellness: {
+              mindfulnessReminders: true,
+              hydrationReminders: true,
+              movementBreaks: true,
+              eyeRest: true,
+              endOfDay: false,
+            },
+          },
+        };
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
@@ -183,15 +212,19 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload.user;
+                state.isLoading = false;
+        state.user = {
+          ...action.payload.user,
+          // New users start with no preferences, so they go through onboarding
+          preferences: action.payload.user.preferences || null,
+        };
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
         state.error = null;
-      })
+              })
       .addCase(registerUser.rejected, (state, action) => {
-        state.isLoading = false;
+                state.isLoading = false;
         state.error = action.payload || 'Registration failed';
         state.isAuthenticated = false;
       });

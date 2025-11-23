@@ -69,7 +69,7 @@ export interface Task {
 }
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 // Session types
 export interface Session {
@@ -191,6 +191,34 @@ export interface WellnessAnalytics {
   energyLevel: number; // 1-5
 }
 
+export interface TeamAnalytics {
+  teamId: string;
+  teamName: string;
+  memberCount: number;
+  totalFocusTime: number; // total minutes for team in date range
+  averageFocusTime: number; // average minutes per member
+  tasksCompleted: number;
+  averageCompletionRate: number; // percentage
+  topPerformers: TeamMemberStats[];
+  focusTrend: 'IMPROVING' | 'DECLINING' | 'STABLE';
+  wellnessScore: number; // team average
+  collaborationScore: number; // based on cross-team tasks
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+}
+
+export interface TeamMemberStats {
+  userId: string;
+  user: User;
+  focusTime: number; // minutes in period
+  tasksCompleted: number;
+  completionRate: number;
+  wellnessScore: number;
+  streakDays: number;
+}
+
 // API Request/Response types
 export interface LoginRequest {
   email: string;
@@ -272,14 +300,22 @@ export interface UIState {
 
 export interface Notification {
   id: string;
-  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'ACHIEVEMENT' | 'TEAM_UPDATE' | 'REMINDER';
   title: string;
   message: string;
   timestamp: string;
   read: boolean;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  userId: string;
+  senderId?: string; // for team notifications
   action?: {
     label: string;
-    onPress: () => void;
+    url?: string;
+    data?: any;
+  };
+  metadata?: {
+    relatedEntityType?: 'task' | 'session' | 'achievement' | 'team' | 'challenge';
+    relatedEntityId?: string;
   };
 }
 

@@ -59,8 +59,15 @@ export const createSession = createAsyncThunk<
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create session');
+        let error = 'Failed to create session';
+        try {
+          const errorData = await response.json();
+          error = errorData.message || error;
+        } catch {
+          // If response is not JSON, use status text
+          error = response.statusText || `HTTP ${response.status}`;
+        }
+        throw new Error(error);
       }
 
       return await response.json();
@@ -98,8 +105,15 @@ export const startSession = createAsyncThunk<
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to start session');
+        let error = 'Failed to start session';
+        try {
+          const errorData = await response.json();
+          error = errorData.message || error;
+        } catch {
+          // If response is not JSON, use status text
+          error = response.statusText || `HTTP ${response.status}`;
+        }
+        throw new Error(error);
       }
 
       return await response.json();
@@ -137,8 +151,15 @@ export const pauseSession = createAsyncThunk<
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to pause session');
+        let error = 'Failed to pause session';
+        try {
+          const errorData = await response.json();
+          error = errorData.message || error;
+        } catch {
+          // If response is not JSON, use status text
+          error = response.statusText || `HTTP ${response.status}`;
+        }
+        throw new Error(error);
       }
 
       return await response.json();
@@ -177,8 +198,15 @@ export const completeSession = createAsyncThunk<
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to complete session');
+        let error = 'Failed to complete session';
+        try {
+          const errorData = await response.json();
+          error = errorData.message || error;
+        } catch {
+          // If response is not JSON, use status text
+          error = response.statusText || `HTTP ${response.status}`;
+        }
+        throw new Error(error);
       }
 
       return await response.json();

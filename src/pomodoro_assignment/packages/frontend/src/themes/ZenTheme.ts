@@ -3,11 +3,9 @@ import { designTokens } from './designTokens';
 
 export const ZenTheme: DefaultTheme = {
   ...designTokens,
-  breakpoints: {
-    mobile: '320px',
-    tablet: '768px',
-    desktop: '1024px',
-  },
+  // Use the comprehensive responsive breakpoints from designTokens
+  breakpoints: designTokens.breakpoints,
+  mediaQueries: designTokens.mediaQueries,
   components: {
     Button: {
       primary: {
@@ -69,10 +67,19 @@ export const ZenTheme: DefaultTheme = {
       },
     },
     Timer: {
-      fontSize: designTokens.typography.fontSize['3xl'],
+      fontSize: designTokens.typography.fontSize['2xl'], // Use 2xl for mobile fallback
       fontWeight: designTokens.typography.fontWeight.bold,
       color: designTokens.colors.neutral[500],
       fontFamily: designTokens.typography.fontFamily.secondary,
+
+      // Responsive timer
+      [designTokens.mediaQueries.tablet]: {
+        fontSize: designTokens.typography.fontSize.tablet['3xl'],
+      },
+
+      [designTokens.mediaQueries.desktop]: {
+        fontSize: designTokens.typography.fontSize.desktop['3xl'],
+      },
     },
     Input: {
       backgroundColor: '#FFFFFF',
@@ -96,10 +103,29 @@ export const ZenTheme: DefaultTheme = {
     Navigation: {
       backgroundColor: '#FFFFFF',
       boxShadow: designTokens.shadows.sm,
-      padding: `${designTokens.spacing.sm} 0`,
+      padding: `${designTokens.spacing.mobile.sm} 0`,
       position: 'sticky',
       top: '0',
       zIndex: 100,
+
+      // Responsive navigation
+      [designTokens.mediaQueries.mobile]: {
+        padding: `${designTokens.spacing.mobile.xs} 0`,
+        flexDirection: 'column',
+        gap: designTokens.spacing.mobile.sm,
+      },
+
+      [designTokens.mediaQueries.tablet]: {
+        padding: `${designTokens.spacing.tablet.sm} 0`,
+        flexDirection: 'row',
+        gap: designTokens.spacing.tablet.md,
+      },
+
+      [designTokens.mediaQueries.desktop]: {
+        padding: `${designTokens.spacing.sm} 0`,
+        flexDirection: 'row',
+        gap: designTokens.spacing.md,
+      },
     },
     ZenGarden: {
       backgroundColor: designTokens.colors.neutral[50],
@@ -121,13 +147,24 @@ export const ZenTheme: DefaultTheme = {
       borderLeft: `4px solid ${designTokens.colors.primary.main}`,
       borderRadius: designTokens.borderRadius.md,
       boxShadow: designTokens.shadows.sm,
-      padding: designTokens.spacing.md,
-      marginBottom: designTokens.spacing.sm,
+      padding: designTokens.spacing.mobile.md,
+      marginBottom: designTokens.spacing.mobile.sm,
       transition: `all ${designTokens.animation.duration.normal} ${designTokens.animation.easing.easeOut}`,
 
       '&:hover': {
         boxShadow: designTokens.shadows.md,
         transform: 'translateX(4px)',
+      },
+
+      // Responsive task cards
+      [designTokens.mediaQueries.tablet]: {
+        padding: designTokens.spacing.tablet.md,
+        marginBottom: designTokens.spacing.tablet.sm,
+      },
+
+      [designTokens.mediaQueries.desktop]: {
+        padding: designTokens.spacing.md,
+        marginBottom: designTokens.spacing.sm,
       },
 
       '&.high-priority': {
@@ -176,11 +213,6 @@ export const ZenTheme: DefaultTheme = {
         transition: `width ${designTokens.animation.duration.normal} ${designTokens.animation.easing.easeInOut}`,
       },
     },
-  },
-  mediaQueries: {
-    mobile: `@media (max-width: 767px)`,
-    tablet: `@media (min-width: 768px) and (max-width: 1023px)`,
-    desktop: `@media (min-width: 1024px)`,
   },
 };
 

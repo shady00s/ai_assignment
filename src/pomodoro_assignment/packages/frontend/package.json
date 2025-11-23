@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:e2e": "cypress run"
   },
   "dependencies": {
     "react": "18.3.1",

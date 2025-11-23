@@ -1,6 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Notification } from '../../types';
 
+// Helper function to create notification with required fields
+const createNotification = (baseNotification: Partial<Omit<Notification, 'id' | 'timestamp' | 'read' | 'priority' | 'userId'>>, priority: Notification['priority'] = 'MEDIUM'): Notification => ({
+  id: `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  timestamp: new Date().toISOString(),
+  read: false,
+  priority,
+  userId: 'current-user', // This would normally come from auth state
+  ...baseNotification,
+} as Notification);
+
 interface UIState {
   sidebarOpen: boolean;
   theme: 'light' | 'dark' | 'auto';
@@ -132,30 +142,20 @@ const uiSlice = createSlice({
 
       if (!action.payload) {
         // Show offline notification
-        const offlineNotification: Omit<Notification, 'id' | 'timestamp' | 'read'> = {
+        const offlineNotification = createNotification({
           type: 'WARNING',
           title: 'Offline Mode',
           message: 'You are currently offline. Some features may be limited.',
-        };
-        state.notifications.unshift({
-          ...offlineNotification,
-          id: `notification-${Date.now()}-offline`,
-          timestamp: new Date().toISOString(),
-          read: false,
-        });
+        }, 'HIGH');
+        state.notifications.unshift(offlineNotification);
       } else {
         // Show online notification
-        const onlineNotification: Omit<Notification, 'id' | 'timestamp' | 'read'> = {
+        const onlineNotification = createNotification({
           type: 'SUCCESS',
           title: 'Back Online',
           message: 'Your connection has been restored.',
-        };
-        state.notifications.unshift({
-          ...onlineNotification,
-          id: `notification-${Date.now()}-online`,
-          timestamp: new Date().toISOString(),
-          read: false,
-        });
+        }, 'LOW');
+        state.notifications.unshift(onlineNotification);
       }
     },
     setKeyboardShortcuts: (state, action: PayloadAction<boolean>) => {
@@ -198,47 +198,35 @@ const uiSlice = createSlice({
       };
     },
     showSuccessNotification: (state, action: PayloadAction<{ title: string; message?: string }>) => {
-      const notification: Notification = {
-        id: `notification-${Date.now()}-success`,
+      const notification = createNotification({
         type: 'SUCCESS',
         title: action.payload.title,
         message: action.payload.message || '',
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
+      });
       state.notifications.unshift(notification);
     },
     showErrorNotification: (state, action: PayloadAction<{ title: string; message?: string }>) => {
-      const notification: Notification = {
-        id: `notification-${Date.now()}-error`,
+      const notification = createNotification({
         type: 'ERROR',
         title: action.payload.title,
         message: action.payload.message || '',
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
+      }, 'HIGH');
       state.notifications.unshift(notification);
     },
     showWarningNotification: (state, action: PayloadAction<{ title: string; message?: string }>) => {
-      const notification: Notification = {
-        id: `notification-${Date.now()}-warning`,
+      const notification = createNotification({
         type: 'WARNING',
         title: action.payload.title,
         message: action.payload.message || '',
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
+      });
       state.notifications.unshift(notification);
     },
     showInfoNotification: (state, action: PayloadAction<{ title: string; message?: string }>) => {
-      const notification: Notification = {
-        id: `notification-${Date.now()}-info`,
+      const notification = createNotification({
         type: 'INFO',
         title: action.payload.title,
         message: action.payload.message || '',
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
+      }, 'LOW');
       state.notifications.unshift(notification);
     },
   },

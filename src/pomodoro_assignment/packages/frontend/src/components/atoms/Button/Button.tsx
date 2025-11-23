@@ -13,6 +13,9 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset';
   className?: string;
   fullWidth?: boolean;
+  style?: React.CSSProperties;
+  onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 const StyledButton = styled(motion.button)<{
@@ -98,6 +101,9 @@ export const Button: React.FC<ButtonProps> = ({
   type = 'button',
   className,
   fullWidth = false,
+  style,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   return (
     <StyledButton
@@ -109,6 +115,9 @@ export const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       type={type}
       className={className}
+      style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       whileHover={{ scale: loading ? 1 : 1.02 }}
       whileTap={{ scale: loading ? 1 : 0.98 }}
       transition={{ duration: 0.15 }}
