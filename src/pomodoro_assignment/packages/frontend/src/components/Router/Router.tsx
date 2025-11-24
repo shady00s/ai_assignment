@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/redux';
 import { authSelectors } from '../../store/slices/authSlice';
-import { AuthScreen, OnboardingScreen, TimerScreen, TaskBoardScreen } from '../pages';
+import { AuthScreen, OnboardingScreen, TimerScreen, TaskBoardScreen, DashboardScreen } from '../pages';
 import { AppLayout } from '../Layout';
 
 interface RouterProps {
@@ -91,15 +91,7 @@ export const Router: React.FC<RouterProps> = ({ children }) => {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <AppLayout>
-              <div style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                color: '#8B7D7B'
-              }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-                <h2 style={{ color: '#2C3E50', marginBottom: '8px' }}>Progress Dashboard</h2>
-                <p>Coming soon - Track your productivity and visualize your progress</p>
-              </div>
+              <DashboardScreen />
             </AppLayout>
           </ProtectedRoute>
         } />

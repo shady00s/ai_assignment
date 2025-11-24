@@ -9,6 +9,7 @@ import { HealthModule } from './core/health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { TasksModule } from './tasks/tasks.module';
     // Core modules
     LoggerModule,
     HealthModule,
+    AnalyticsModule,
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     forwardRef(() => TasksModule),

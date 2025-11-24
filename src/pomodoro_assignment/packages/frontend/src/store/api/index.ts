@@ -26,9 +26,9 @@ export {
   useCreateTeamMutation,
   useJoinTeamMutation,
   useLeaveTeamMutation,
-  useGetAchievementsQuery,
-  useGetUserAchievementsQuery,
-  useUnlockAchievementMutation,
+  // useGetAchievementsQuery, // Disabled for now
+  // useGetUserAchievementsQuery, // Disabled for now
+  // useUnlockAchievementMutation, // Disabled for now
   useGetChallengesQuery,
   useGetChallengeByIdQuery,
   useCreateChallengeMutation,

@@ -1,0 +1,1 @@
+- append each prompt i write in .md file inside folder called claude_prompts
