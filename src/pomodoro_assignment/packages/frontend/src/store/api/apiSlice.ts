@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '../index';
+import   { RootState } from '../index';
 import {
   User,
   Task,
@@ -21,7 +21,17 @@ import {
   TaskFilters,
   TaskSort,
   SessionFilters,
+  WellnessEntry,
+  WellnessReminder,
+  WellnessGoal,
+  DetailedWellnessAnalytics,
+  Recommendation,
+  IncrementHydrationRequest,
+  LogMovementRequest,
+  UpdateMoodRequest,
+  LogMeditationRequest,
 } from '../../types';
+import { WellnessTrend } from '@/types/wellness.types';
 
 // Define tag types for cache invalidation
 export const tagTypes = [
@@ -34,6 +44,11 @@ export const tagTypes = [
   'Challenge',
   'Analytics',
   'Notification',
+  'WellnessEntry',
+  'WellnessReminder',
+  'WellnessGoal',
+  'WellnessAnalytics',
+  'WellnessRecommendation',
 ] as const;
 
 export const apiSlice = createApi({
@@ -390,6 +405,185 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Notification'],
     }),
+
+    // Wellness endpoints
+    getTodayWellness: builder.query<WellnessEntry | null, void>({
+      query: () => 'wellness/today',
+      providesTags: ['WellnessEntry'],
+    }),
+
+    getWellnessHistory: builder.query<WellnessEntry[], { startDate?: string; endDate?: string; days?: number; page?: number; limit?: number }>({
+      query: ({ startDate, endDate, days, page, limit }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+        if (days) params.set('days', days.toString());
+        if (page) params.set('page', page.toString());
+        if (limit) params.set('limit', limit.toString());
+        return `wellness/history?${params.toString()}`;
+      },
+      providesTags: ['WellnessEntry'],
+    }),
+
+    getWellnessGoals: builder.query<WellnessGoal[], void>({
+      query: () => 'wellness/goals',
+      providesTags: ['WellnessGoal'],
+    }),
+
+    createWellnessGoal: builder.mutation<WellnessGoal, Omit<WellnessGoal, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'currentProgress' | 'progressPercentage'>>({
+      query: (goalData) => ({
+        url: 'wellness/goals',
+        method: 'POST',
+        body: goalData,
+      }),
+      invalidatesTags: ['WellnessGoal', 'WellnessAnalytics'],
+    }),
+
+    updateWellnessGoal: builder.mutation<WellnessGoal, { id: string; updates: Partial<WellnessGoal> }>({
+      query: ({ id, updates }) => ({
+        url: `wellness/goals/${id}`,
+        method: 'PUT',
+        body: updates,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'WellnessGoal', id }],
+    }),
+
+    deleteWellnessGoal: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `wellness/goals/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, id) => [{ type: 'WellnessGoal', id }],
+    }),
+
+    getWellnessReminders: builder.query<WellnessReminder[], void>({
+      query: () => 'wellness/reminders',
+      providesTags: ['WellnessReminder'],
+    }),
+
+    createWellnessReminder: builder.mutation<WellnessReminder, Omit<WellnessReminder, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'lastTrigger'>>({
+      query: (reminderData) => ({
+        url: 'wellness/reminders',
+        method: 'POST',
+        body: reminderData,
+      }),
+      invalidatesTags: ['WellnessReminder'],
+    }),
+
+    updateWellnessReminder: builder.mutation<WellnessReminder, { id: string; updates: Partial<WellnessReminder> }>({
+      query: ({ id, updates }) => ({
+        url: `wellness/reminders/${id}`,
+        method: 'PUT',
+        body: updates,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'WellnessReminder', id }],
+    }),
+
+    deleteWellnessReminder: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `wellness/reminders/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, id) => [{ type: 'WellnessReminder', id }],
+    }),
+
+    createOrUpdateWellnessEntry: builder.mutation<WellnessEntry, CreateWellnessEntryRequest>({
+      query: (entryData) => ({
+        url: 'wellness/entry',
+        method: 'POST',
+        body: entryData,
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    updateWellnessEntryByDate: builder.mutation<WellnessEntry, { date: string; updates: Partial<CreateWellnessEntryRequest> }>({
+      query: ({ date, updates }) => ({
+        url: `wellness/entry/${date}`,
+        method: 'PUT',
+        body: updates,
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    deleteWellnessEntryByDate: builder.mutation<void, string>({
+      query: (date) => ({
+        url: `wellness/entry/${date}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    getWellnessSummary: builder.query<any, void>({
+      query: () => 'wellness/summary',
+      providesTags: ['WellnessEntry', 'WellnessGoal'],
+    }),
+
+    getWellnessAnalyticsSummary: builder.query<DetailedWellnessAnalytics, { days?: number; startDate?: string; endDate?: string; includeRecommendations?: boolean; includeTrends?: boolean }>({
+      query: ({ days, startDate, endDate, includeRecommendations, includeTrends }) => {
+        const params = new URLSearchParams();
+        if (days) params.set('days', days.toString());
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+        if (includeRecommendations !== undefined) params.set('includeRecommendations', includeRecommendations.toString());
+        if (includeTrends !== undefined) params.set('includeTrends', includeTrends.toString());
+        return `wellness/analytics/summary?${params.toString()}`;
+      },
+      providesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    getWellnessTrends: builder.query<WellnessTrend[], { days?: number }>({
+      query: ({ days }) => {
+        const params = new URLSearchParams();
+        if (days) params.set('days', days.toString());
+        return `wellness/analytics/trends?${params.toString()}`;
+      },
+      providesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    getWellnessRecommendations: builder.query<WellnessRecommendation[], { days?: number }>({
+      query: ({ days }) => {
+        const params = new URLSearchParams();
+        if (days) params.set('days', days.toString());
+        return `wellness/analytics/recommendations?${params.toString()}`;
+      },
+      providesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    incrementHydration: builder.mutation<WellnessEntry, IncrementHydrationRequest>({
+      query: ({ glasses }) => ({
+        url: 'wellness/hydration/increment',
+        method: 'POST',
+        body: { glasses },
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    logMovementBreak: builder.mutation<WellnessEntry, LogMovementRequest>({
+      query: ({ duration, type, intensity }) => ({
+        url: 'wellness/movement/log',
+        method: 'POST',
+        body: { duration, type, intensity },
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    updateMood: builder.mutation<WellnessEntry, UpdateMoodRequest>({
+      query: ({ mood, stress, energy }) => ({
+        url: 'wellness/mood/update',
+        method: 'POST',
+        body: { mood, stress, energy },
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
+
+    logMeditation: builder.mutation<WellnessEntry, LogMeditationRequest>({
+      query: ({ minutes, type, quality, notes }) => ({
+        url: 'wellness/meditation/log',
+        method: 'POST',
+        body: { minutes, type, quality, notes },
+      }),
+      invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
+    }),
   }),
 });
 
@@ -432,4 +626,25 @@ export const {
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,
+  useGetTodayWellnessQuery,
+  useGetWellnessHistoryQuery,
+  useGetWellnessGoalsQuery,
+  useCreateWellnessGoalMutation,
+  useUpdateWellnessGoalMutation,
+  useDeleteWellnessGoalMutation,
+  useGetWellnessRemindersQuery,
+  useCreateWellnessReminderMutation,
+  useUpdateWellnessReminderMutation,
+  useDeleteWellnessReminderMutation,
+  useCreateOrUpdateWellnessEntryMutation,
+  useUpdateWellnessEntryByDateMutation,
+  useDeleteWellnessEntryByDateMutation,
+  useGetWellnessSummaryQuery,
+  useGetWellnessAnalyticsSummaryQuery,
+  useGetWellnessTrendsQuery,
+  useGetWellnessRecommendationsQuery,
+  useIncrementHydrationMutation,
+  useLogMovementBreakMutation,
+  useUpdateMoodMutation,
+  useLogMeditationMutation,
 } = apiSlice;

@@ -9,6 +9,7 @@ import { timerSlice, timerSelectors } from './slices/timerSlice';
 import { tasksSlice, tasksSelectors } from './slices/tasksSlice';
 import { uiSlice, uiSelectors } from './slices/uiSlice';
 import { apiSlice } from './api/apiSlice';
+import { wellnessApi } from './api/wellnessApi';
 
 // Import timer actions
 import {
@@ -33,6 +34,7 @@ const rootReducer = combineReducers({
   tasks: tasksSlice.reducer,
   ui: uiSlice.reducer,
   api: apiSlice.reducer,
+  wellnessApi: wellnessApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -43,9 +45,9 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/REGISTER'],
-        ignoredPaths: ['api'],
+        ignoredPaths: ['api', 'wellnessApi'],
       },
-    }).concat(apiSlice.middleware),
+    }).concat(apiSlice.middleware, wellnessApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

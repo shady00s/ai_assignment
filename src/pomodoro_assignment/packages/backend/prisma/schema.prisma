@@ -42,6 +42,9 @@ model User {
   achievements   UserAchievement[]
   notifications  Notification[]
   currentTeam    Team?     @relation("TeamOwner")
+  wellnessEntries     WellnessEntry[]
+  wellnessReminders   WellnessReminder[]
+  wellnessGoals       WellnessGoal[]
 
   @@map("users")
   @@index([email])
@@ -253,4 +256,88 @@ model Notification {
   @@index([readAt])
   @@index([scheduledFor])
   @@index([createdAt])
+}
+
+// ============================================
+// WELLNESS MODELS
+// ============================================
+
+model WellnessEntry {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  date        DateTime @default(now())
+
+  // Hydration tracking
+  hydrationGlasses    Int      @default(0)  // Glasses of water consumed
+  hydrationGoal       Int      @default(8)  // Daily goal in glasses
+
+  // Movement tracking
+  movementBreaks      Int      @default(0)  // Movement breaks taken
+  movementMinutes     Int      @default(0)  // Total movement minutes
+  stepsCount          Int?                // Step count (if integrated)
+
+  // Mental wellness
+  meditationMinutes   Int      @default(0)  // Time spent meditating
+  breathingExercises  Int      @default(0)  // Count of breathing exercises
+  mindfulnessSessions Int      @default(0)  // Number of mindfulness sessions
+
+  // Self-reported metrics
+  moodRating          Int      @default(3)  // 1-5 scale (1=very poor, 5=excellent)
+  stressLevel         Int      @default(3)  // 1-5 scale (1=very low, 5=very high)
+  energyLevel         Int      @default(3)  // 1-5 scale (1=very low, 5=very high)
+  sleepQuality        Int?                // 1-5 scale (optional)
+  sleepHours          Float?              // Hours of sleep (optional)
+
+  // Session-based wellness
+  postureChecks       Int      @default(0)  // Posture reminders completed
+  eyeRestBreaks       Int      @default(0)  // Eye rest breaks taken
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date])
+  @@map("wellness_entries")
+}
+
+model WellnessReminder {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  type        String   // 'HYDRATION' | 'MOVEMENT' | 'POSTURE' | 'EYE_REST' | 'MEDITATION'
+  enabled     Boolean  @default(true)
+  frequency   Int      // Minutes between reminders
+  startTime   String   // HH:mm format
+  endTime     String   // HH:mm format
+  weekdays    String   // JSON array: [1,2,3,4,5] for Mon-Fri
+  lastTrigger DateTime? @map("last_trigger")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@map("wellness_reminders")
+}
+
+model WellnessGoal {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  category    String   // 'HYDRATION' | 'MOVEMENT' | 'MEDITATION' | 'SLEEP'
+  targetValue Int      // Goal value (e.g., 8 glasses, 10000 steps)
+  period      String   // 'DAILY' | 'WEEKLY' | 'MONTHLY'
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, period])
+  @@index([userId])
+  @@map("wellness_goals")
 }

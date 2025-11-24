@@ -146,7 +146,23 @@ export class AnalyticsService {
   }
 
   async getWellnessAnalytics(userId: string, startDate?: Date, endDate?: Date) {
-    // Get user's basic info for wellness metrics
+    // Get today's wellness entry for real-time metrics
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayWellnessEntry = await this.prisma.wellnessEntry.findFirst({
+      where: {
+        userId,
+        date: {
+          gte: today,
+          lt: tomorrow
+        }
+      }
+    });
+
+    // Get user's basic info for fallback metrics
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -171,8 +187,7 @@ export class AnalyticsService {
       }
     }
 
-    // Get user's sessions for today's wellness calculations
-    const today = new Date();
+    // Get user's sessions for fallback calculations
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     const todaySessions = await this.prisma.session.findMany({
@@ -188,28 +203,70 @@ export class AnalyticsService {
       },
     });
 
-    // Calculate hydration based on session count and breaks (8 glasses per day goal)
-    // Assume good hydration if user takes regular breaks
-    const sessionsWithBreaks = todaySessions.filter(s => s.type === 'SHORT_BREAK').length;
-    const hydrationCurrent = Math.min(8, Math.max(1, sessionsWithBreaks + 2));
+    // Use real wellness data if available, otherwise fallback to calculated values
+    const hasRealWellnessData = !!todayWellnessEntry;
 
-    // Calculate movement based on break sessions and total focus time (5 movement breaks per day goal)
-    const focusSessions = todaySessions.filter(s => s.type === 'POMODORO').length;
-    const movementCurrent = Math.min(5, Math.max(1, sessionsWithBreaks + Math.floor(focusSessions / 3)));
+    // Hydration metrics
+    const hydrationGoal = todayWellnessEntry?.hydrationGoal || preferences.wellness?.hydrationGoal || 8;
+    const hydrationCurrent = hasRealWellnessData
+      ? todayWellnessEntry!.hydrationGlasses
+      : this.calculateHydrationFallback(todaySessions);
 
-    // Calculate wellness analytics based on user data and actual session patterns
+    // Movement metrics
+    const movementGoal = 5; // Default goal
+    const movementCurrent = hasRealWellnessData
+      ? todayWellnessEntry!.movementBreaks
+      : this.calculateMovementFallback(todaySessions);
+
+    // Mindfulness metrics
+    const mindfulnessMinutes = hasRealWellnessData
+      ? todayWellnessEntry!.meditationMinutes
+      : Math.round(user.totalFocusTime * 0.1);
+
+    // Self-reported metrics - use real data if available, otherwise calculate from user profile
+    const moodRating = hasRealWellnessData
+      ? todayWellnessEntry!.moodRating
+      : (user.wellnessScore ? Math.round(user.wellnessScore) : 3);
+    const stressLevel = hasRealWellnessData
+      ? todayWellnessEntry!.stressLevel
+      : Math.max(1, 5 - Math.round(user.wellnessScore || 3));
+    const energyLevel = hasRealWellnessData
+      ? todayWellnessEntry!.energyLevel
+      : Math.min(5, Math.round((user.streak / 7) + 2));
+
+    // Calculate wellness analytics based on real wellness data with fallback
     const wellnessAnalytics = {
-      mindfulnessMinutes: Math.round(user.totalFocusTime * 0.1), // 10% of focus time
-      hydrationGoal: 8, // glasses per day
-      hydrationCurrent, // ✅ FIXED: Calculated from session patterns
-      movementGoal: 5, // breaks per day
-      movementCurrent, // ✅ FIXED: Calculated from session patterns
-      moodRating: user.wellnessScore ? Math.round(user.wellnessScore) : 3,
-      stressLevel: Math.max(1, 5 - Math.round(user.wellnessScore || 3)), // Inverse of wellness
-      energyLevel: Math.min(5, Math.round((user.streak / 7) + 2)), // Based on streak
+      mindfulnessMinutes,
+      hydrationGoal,
+      hydrationCurrent, // ✅ UPDATED: Real wellness data with fallback
+      movementGoal,
+      movementCurrent, // ✅ UPDATED: Real wellness data with fallback
+      moodRating,
+      stressLevel,
+      energyLevel,
     };
 
     return wellnessAnalytics;
+  }
+
+  /**
+   * Fallback method to calculate hydration from session patterns
+   */
+  private calculateHydrationFallback(todaySessions: any[]): number {
+    // Calculate hydration based on session count and breaks (8 glasses per day goal)
+    // Assume good hydration if user takes regular breaks
+    const sessionsWithBreaks = todaySessions.filter(s => s.type === 'SHORT_BREAK').length;
+    return Math.min(8, Math.max(1, sessionsWithBreaks + 2));
+  }
+
+  /**
+   * Fallback method to calculate movement from session patterns
+   */
+  private calculateMovementFallback(todaySessions: any[]): number {
+    // Calculate movement based on break sessions and total focus time (5 movement breaks per day goal)
+    const sessionsWithBreaks = todaySessions.filter(s => s.type === 'SHORT_BREAK').length;
+    const focusSessions = todaySessions.filter(s => s.type === 'POMODORO').length;
+    return Math.min(5, Math.max(1, sessionsWithBreaks + Math.floor(focusSessions / 3)));
   }
 
   async getTeamAnalytics(teamId: string, startDate?: Date, endDate?: Date, userId?: string) {

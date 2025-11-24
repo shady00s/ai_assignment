@@ -13,6 +13,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { TeamsModule } from './teams/teams.module';
+import { WellnessModule } from './wellness/wellness.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { TeamsModule } from './teams/teams.module';
     AchievementsModule,
     SessionsModule,
     TeamsModule,
+    WellnessModule,
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     forwardRef(() => TasksModule),

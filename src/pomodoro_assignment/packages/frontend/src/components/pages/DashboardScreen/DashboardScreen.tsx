@@ -1,16 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   useGetFocusAnalyticsQuery,
   useGetWellnessAnalyticsQuery,
-  useGetProfileQuery
-} from '../../../store/api';
+  useGetProfileQuery,
+  } from '@store/api';
+
+import { useGetTodayWellnessQuery,
+   } from '@store/api/wellnessApi';
+
 import { LoadingSpinner } from '../../atoms/LoadingSpinner';
 import { ErrorMessage } from '../../atoms/ErrorMessage';
 import { FocusMetricsCard } from './components/FocusAnalytics/FocusMetricsCard';
 import { WeeklyBarChart } from './components/Charts/WeeklyBarChart';
 import { WellnessCard } from './components/Wellness/WellnessCard';
 import { AchievementGallery } from './components/Achievements/AchievementGallery';
+import { useCreateOrUpdateWellnessEntryMutation } from '@/store/api/apiSlice';
 
 interface DateRange {
   startDate?: string;
@@ -21,6 +26,7 @@ const DashboardContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.mobile.sm};
   max-width: 100%;
   margin: 0 auto;
+     min-height: 100vh;
 
   ${({ theme }) => theme.mediaQueries.tablet} {
     padding: ${({ theme }) => theme.spacing.tablet.md};
@@ -62,16 +68,16 @@ const DashboardHeader = styled.header`
 
 const DashboardGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
-  gap: ${({ theme }) => theme.spacing.mobile.md};
+    grid-template-columns: 1fr;
+   gap: ${({ theme }) => theme.spacing.mobile.md};
 
   ${({ theme }) => theme.mediaQueries.tablet} {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(1, 1fr);
     gap: ${({ theme }) => theme.spacing.tablet.lg};
   }
 
   ${({ theme }) => theme.mediaQueries.desktop} {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: ${({ theme }) => theme.spacing.lg};
   }
 `;
@@ -125,21 +131,47 @@ export const DashboardScreen: React.FC = () => {
   } = useGetWellnessAnalyticsQuery(dateRange);
 
   const {
+    data: todayWellness,
+    isLoading: todayWellnessLoading,
+    error: todayWellnessError
+  } = useGetTodayWellnessQuery();
+
+  const [createWellnessEntry, { isLoading: isCreatingWellness }] = useCreateOrUpdateWellnessEntryMutation();
+
+  const {
     data: userProfile,
     isLoading: profileLoading,
     error: profileError
   } = useGetProfileQuery();
 
+  // Create default wellness entry if none exists
+  useEffect(() => {
+    if (!todayWellnessLoading && !todayWellnessError && !todayWellness && !isCreatingWellness) {
+      createWellnessEntry({
+        hydrationGlasses: 0,
+        hydrationGoal: 8,
+        movementBreaks: 0,
+        movementMinutes: 0,
+        moodRating: 3,
+        stressLevel: 3,
+        energyLevel: 3,
+        meditationMinutes: 0,
+        breathingExercises: 0,
+        mindfulnessSessions: 0,
+        postureChecks: 0,
+        eyeRestBreaks: 0,
+      });
+    }
+  }, [todayWellness, todayWellnessLoading, todayWellnessError, isCreatingWellness, createWellnessEntry]);
+
   // Disable achievements API call - using empty data
   const userAchievements: any[] = [];
-  const achievementsLoading = false;
-  const achievementsError = null;
-
+ 
   // Temporarily disable sessions API call - using empty data
   const sessions: any[] = []; // Mock empty sessions data
 
-  const isLoading = focusLoading || wellnessLoading || profileLoading;
-  const hasError = focusError || wellnessError || profileError;
+  const isLoading = focusLoading || wellnessLoading || profileLoading || todayWellnessLoading || isCreatingWellness;
+  const hasError = focusError || wellnessError || profileError || todayWellnessError;
 
   if (isLoading) {
     return (

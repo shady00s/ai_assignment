@@ -345,3 +345,210 @@ export interface SessionFilters {
   userId?: string[];
   taskId?: string[];
 }
+
+// Wellness Tracking System Types
+// ====================================
+
+export interface WellnessEntry {
+  id: string;
+  userId: string;
+  date: string;
+
+  // Hydration tracking
+  hydrationGlasses: number;
+  hydrationGoal: number;
+
+  // Movement tracking
+  movementBreaks: number;
+  movementMinutes: number;
+  stepsCount?: number;
+
+  // Mental wellness
+  meditationMinutes: number;
+  breathingExercises: number;
+  mindfulnessSessions: number;
+
+  // Self-reported metrics
+  moodRating: number;
+  stressLevel: number;
+  energyLevel: number;
+  sleepQuality?: number;
+  sleepHours?: number;
+
+  // Session-based wellness
+  postureChecks: number;
+  eyeRestBreaks: number;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WellnessReminder {
+  id: string;
+  userId: string;
+  type: 'HYDRATION' | 'MOVEMENT' | 'POSTURE' | 'EYE_REST' | 'MEDITATION';
+  enabled: boolean;
+  frequency: number;
+  startTime: string;
+  endTime: string;
+  weekdays: number[];
+  lastTrigger?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WellnessGoal {
+  id: string;
+  userId: string;
+  category: 'HYDRATION' | 'MOVEMENT' | 'MEDITATION' | 'SLEEP';
+  targetValue: number;
+  period: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DetailedWellnessAnalytics {
+  hydration: {
+    weeklyAverage: number;
+    bestDay: string;
+    consistencyScore: number;
+    trend: 'IMPROVING' | 'DECLINING' | 'STABLE';
+  };
+  movement: {
+    averageBreaks: number;
+    totalMinutes: number;
+    trend: 'IMPROVING' | 'DECLINING' | 'STABLE';
+  };
+  mood: {
+    averageRating: number;
+    moodPattern: number[];
+    stressCorrelation: number;
+  };
+  meditation: {
+    totalMinutes: number;
+    sessionCount: number;
+    averageSessionLength: number;
+    consistency: number;
+  };
+  energy: {
+    averageLevel: number;
+    pattern: number[];
+    correlationWithProductivity: number;
+  };
+  sleep: {
+    averageHours?: number;
+    averageQuality?: number;
+    consistency?: number;
+  };
+}
+
+export interface Recommendation {
+  id: string;
+  type: 'HYDRATION' | 'MOVEMENT' | 'MEDITATION' | 'SLEEP' | 'POSTURE' | 'STRESS';
+  title: string;
+  description: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  actionable: boolean;
+  icon: string;
+  category: string;
+}
+
+export interface MeditationOption {
+  id: string;
+  name: string;
+  duration: number;
+  type: 'GUIDED' | 'BREATHING' | 'MINDFULNESS';
+  audioUrl?: string;
+  description?: string;
+}
+
+// Component Props Interfaces
+export interface HydrationTrackerProps {
+  currentGlasses: number;
+  dailyGoal: number;
+  glassSize: number;
+  onIncrement: () => void;
+  onDecrement: () => void;
+  onGoalUpdate: (newGoal: number) => void;
+  isLoading: boolean;
+  compact?: boolean;
+}
+
+export interface MovementTrackerProps {
+  movementBreaks: number;
+  movementMinutes: number;
+  stepsCount?: number;
+  dailyGoal: number;
+  onStartBreak: () => void;
+  onEndBreak: (duration: number) => void;
+  onLogActivity: (minutes: number, type: string) => void;
+  isLoading: boolean;
+  compact?: boolean;
+}
+
+export interface MoodTrackerProps {
+  moodRating: number;
+  stressLevel: number;
+  energyLevel: number;
+  onMoodUpdate: (mood: number) => void;
+  onStressUpdate: (stress: number) => void;
+  onEnergyUpdate: (energy: number) => void;
+  lastCheckIn: string;
+  isLoading: boolean;
+  compact?: boolean;
+}
+
+export interface MeditationTimerProps {
+  totalMinutes: number;
+  sessionGoal: number;
+  onStartSession: (duration: number) => void;
+  onCompleteSession: (duration: number, quality: number) => void;
+  guidedOptions: MeditationOption[];
+  isLoading: boolean;
+  compact?: boolean;
+}
+
+export interface WellnessDashboardProps {
+  date?: string;
+  viewMode: 'compact' | 'detailed' | 'analytics';
+  onDateChange?: (date: string) => void;
+  className?: string;
+}
+
+// API Request/Response Types for Wellness
+export interface IncrementHydrationRequest {
+  glasses: number;
+}
+
+export interface LogMovementRequest {
+  duration: number;
+  type: string;
+  intensity?: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface UpdateMoodRequest {
+  mood: number;
+  stress: number;
+  energy: number;
+}
+
+export interface LogMeditationRequest {
+  minutes: number;
+  type: string;
+  quality: number;
+  notes?: string;
+}
+
+// Update the existing WellnessAnalytics to include the new detailed analytics
+export interface WellnessAnalytics {
+  mindfulnessMinutes: number;
+  hydrationGoal: number;
+  hydrationCurrent: number;
+  movementGoal: number;
+  movementCurrent: number;
+  moodRating: number; // 1-5
+  stressLevel: number; // 1-5
+  energyLevel: number; // 1-5
+  detailedAnalytics?: DetailedWellnessAnalytics;
+}

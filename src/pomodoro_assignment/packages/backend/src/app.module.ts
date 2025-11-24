@@ -10,6 +10,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { TeamsModule } from './teams/teams.module';
+import { WellnessModule } from './wellness/wellness.module';
 import { LoggerService } from './core/logger/logger.service';
 import { AuthGuard } from './auth/guards/auth.guard';
 
@@ -28,6 +29,7 @@ import { AuthGuard } from './auth/guards/auth.guard';
     NotificationsModule,
     AchievementsModule,
     TeamsModule,
+    WellnessModule,
     // Future modules will be added here:
     // ChallengesModule,
     // NotificationsGateway,
