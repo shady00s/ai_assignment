@@ -130,14 +130,13 @@ export const DashboardScreen: React.FC = () => {
     error: profileError
   } = useGetProfileQuery();
 
-  // Disable achievements API call for now - using empty data
-  const userAchievements = [];
+  // Disable achievements API call - using empty data
+  const userAchievements: any[] = [];
   const achievementsLoading = false;
   const achievementsError = null;
 
   // Temporarily disable sessions API call - using empty data
   const sessions: any[] = []; // Mock empty sessions data
-  const sessionsLoading = false;
 
   const isLoading = focusLoading || wellnessLoading || profileLoading;
   const hasError = focusError || wellnessError || profileError;
@@ -246,7 +245,7 @@ export const DashboardScreen: React.FC = () => {
           <AchievementGallery
             level={userProfile?.level || 1}
             xp={userProfile?.xp || 0}
-            achievements={[]} // Disabled - using empty achievements array
+            achievements={userAchievements || []}
           />
         </FullWidthSection>
       </DashboardGrid>

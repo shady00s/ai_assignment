@@ -1,11 +1,40 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class TeamMemberUserDto {
+  @ApiProperty({ description: 'User ID' })
+  id: string;
+
+  @ApiProperty({ description: 'First name' })
+  firstName: string;
+
+  @ApiProperty({ description: 'Last name' })
+  lastName: string;
+
+  @ApiProperty({ description: 'Email address' })
+  email: string;
+
+  @ApiProperty({ description: 'Avatar URL', required: false })
+  avatar?: string;
+
+  @ApiProperty({ description: 'Current wellness score', example: 85 })
+  wellnessScore: number;
+
+  @ApiProperty({ description: 'Current level', example: 5 })
+  level: number;
+
+  @ApiProperty({ description: 'Total XP points', example: 2500 })
+  xp: number;
+
+  @ApiProperty({ description: 'Current streak days', example: 7 })
+  streak: number;
+}
+
 export class TeamMemberStatsDto {
   @ApiProperty({ description: 'User ID' })
   userId: string;
 
-  @ApiProperty({ description: 'User information' })
-  user: any; // Partial user object
+  @ApiProperty({ description: 'User information', type: TeamMemberUserDto })
+  user: TeamMemberUserDto;
 
   @ApiProperty({
     description: 'Focus time in minutes for the period',

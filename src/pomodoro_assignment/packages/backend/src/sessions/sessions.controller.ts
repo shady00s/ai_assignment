@@ -10,13 +10,16 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { SessionsService, SessionType } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('sessions')
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
@@ -26,6 +29,19 @@ export class SessionsController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all sessions for the current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sessions retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiQuery({ name: 'type', required: false, description: 'Filter by session type' })
+  @ApiQuery({ name: 'taskId', required: false, description: 'Filter by task ID' })
+  @ApiQuery({ name: 'startDate', required: false, description: 'Filter by start date' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'Filter by end date' })
   findAll(
     @Request() req,
     @Query('type') type?: string,

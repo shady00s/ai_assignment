@@ -8,6 +8,8 @@ import { TasksModule } from './tasks/tasks.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AchievementsModule } from './achievements/achievements.module';
+import { TeamsModule } from './teams/teams.module';
 import { LoggerService } from './core/logger/logger.service';
 import { AuthGuard } from './auth/guards/auth.guard';
 
@@ -24,9 +26,9 @@ import { AuthGuard } from './auth/guards/auth.guard';
     SessionsModule,
     AnalyticsModule,
     NotificationsModule,
+    AchievementsModule,
+    TeamsModule,
     // Future modules will be added here:
-    // TeamsModule,
-    // AchievementsModule,
     // ChallengesModule,
     // NotificationsGateway,
   ],

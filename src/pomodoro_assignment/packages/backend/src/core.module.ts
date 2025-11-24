@@ -10,6 +10,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AchievementsModule } from './achievements/achievements.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
   imports: [
@@ -39,6 +42,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
     LoggerModule,
     HealthModule,
     AnalyticsModule,
+    AchievementsModule,
+    SessionsModule,
+    TeamsModule,
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     forwardRef(() => TasksModule),
