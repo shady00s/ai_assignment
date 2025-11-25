@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { useAppSelector, useAppDispatch } from '../../../hooks/redux';
-import { fetchTasks, createTask, updateTask, deleteTask } from '../../../store/slices/tasksSlice';
-import { Task } from '../../../types';
+import { useAppSelector } from '../../../hooks/redux';
+import { useGetTasksQuery, useCreateTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation } from '../../../store/api/apiSlice';
+import { Task, CreateTaskRequest, UpdateTaskRequest } from '../../../types';
 import {
   DndContext,
   DragEndEvent,
@@ -371,19 +371,17 @@ interface TaskBoardScreenProps {
 }
 
 export const TaskBoardScreen: React.FC<TaskBoardScreenProps> = ({ className }) => {
-  const dispatch = useAppDispatch();
-
-  // Redux state
+  // RTK Query hooks
   const {
-    tasks,
+    data: tasks = [],
     isLoading,
-    error
-  } = useAppSelector(state => state.tasks);
+    error,
+    refetch
+  } = useGetTasksQuery();
 
-  // Fetch tasks on component mount
-  useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+  const [createTask] = useCreateTaskMutation();
+  const [updateTask] = useUpdateTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -519,11 +517,18 @@ export const TaskBoardScreen: React.FC<TaskBoardScreenProps> = ({ className }) =
       if (activeTask.status !== over.id) {
         columnChanged = true;
         targetColumn = over.id as Task['status'];
-        // Update via Redux
-        dispatch(updateTask({
+        // Update via RTK Query
+        updateTask({
           id: activeTask.id,
           updates: { status: targetColumn }
-        }));
+        }).unwrap()
+          .then(() => {
+            // Refetch to ensure UI is updated
+            refetch();
+          })
+          .catch((error) => {
+            console.error('Failed to update task:', error);
+          });
       }
     }
     // If dropping on another task
@@ -532,11 +537,18 @@ export const TaskBoardScreen: React.FC<TaskBoardScreenProps> = ({ className }) =
       if (overTask && activeTask.status !== overTask.status) {
         columnChanged = true;
         targetColumn = overTask.status;
-        // Update via Redux
-        dispatch(updateTask({
+        // Update via RTK Query
+        updateTask({
           id: activeTask.id,
           updates: { status: targetColumn }
-        }));
+        }).unwrap()
+          .then(() => {
+            // Refetch to ensure UI is updated
+            refetch();
+          })
+          .catch((error) => {
+            console.error('Failed to update task:', error);
+          });
       }
     }
 
@@ -578,20 +590,41 @@ export const TaskBoardScreen: React.FC<TaskBoardScreenProps> = ({ className }) =
       tags: tempTask.tags,
     };
 
-    dispatch(createTask(taskDataForBackend));
+    createTask(taskDataForBackend).unwrap()
+      .then(() => {
+        // Refetch to ensure UI is updated
+        refetch();
+      })
+      .catch((error) => {
+        console.error('Failed to create task:', error);
+      });
   };
 
   // Update task
   const handleUpdateTask = (taskId: string, updates: Partial<Task>) => {
-    dispatch(updateTask({
+    updateTask({
       id: taskId,
       updates
-    }));
+    }).unwrap()
+      .then(() => {
+        // Refetch to ensure UI is updated
+        refetch();
+      })
+      .catch((error) => {
+        console.error('Failed to update task:', error);
+      });
   };
 
   // Delete task
   const handleDeleteTask = (taskId: string) => {
-    dispatch(deleteTask(taskId));
+    deleteTask(taskId).unwrap()
+      .then(() => {
+        // Refetch to ensure UI is updated
+        refetch();
+      })
+      .catch((error) => {
+        console.error('Failed to delete task:', error);
+      });
   };
 
   // Get task statistics
@@ -653,7 +686,7 @@ export const TaskBoardScreen: React.FC<TaskBoardScreenProps> = ({ className }) =
           marginBottom: '24px',
           border: '1px solid #fcc'
         }}>
-          <strong>Error:</strong> {error}
+          <strong>Error:</strong> {typeof error === 'string' ? error : error?.data?.message || 'Failed to load tasks'}
         </div>
       )}
 

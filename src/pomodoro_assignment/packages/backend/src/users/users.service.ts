@@ -501,7 +501,7 @@ export class UsersService {
     }
   }
 
-  async updatePreferences(userId: string, updatePreferencesDto: UpdatePreferencesDto) {
+  async updatePreferences(userId: string, updatePreferencesDto: UpdatePreferencesDto, replaceAll = false) {
     try {
       // Check if user exists
       const existingUser = await this.databaseService.user.findUnique({
@@ -523,11 +523,13 @@ export class UsersService {
         }
       }
 
-      // Merge new preferences with existing ones
-      const updatedPreferences = {
-        ...currentPreferences,
-        ...updatePreferencesDto,
-      };
+      // For PUT semantics, replace all preferences; for PATCH semantics, merge
+      const updatedPreferences = replaceAll
+        ? updatePreferencesDto
+        : {
+            ...currentPreferences,
+            ...updatePreferencesDto,
+          };
 
       // Update user with new preferences
       const updatedUser = await this.databaseService.user.update({

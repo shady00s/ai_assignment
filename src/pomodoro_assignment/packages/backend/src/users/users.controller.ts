@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Put,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -16,7 +17,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UpdatePreferencesDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UpdatePreferencesDto, UpdateProfileDto } from './dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { LoggerService } from '../core/logger/logger.service';
@@ -274,7 +275,7 @@ export class UsersController {
     return this.usersService.update(currentUser.userId, updateUserDto);
   }
 
-  @Patch('profile')
+  @Put('profile')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user profile (frontend compatibility)' })
@@ -291,10 +292,41 @@ export class UsersController {
     description: 'Email already in use',
   })
   async updateProfile(
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateProfileDto: UpdateProfileDto,
     @CurrentUser() currentUser: any,
   ) {
     this.logger.logUserAction('PROFILE_UPDATE_ATTEMPT', currentUser.userId, {
+      updateFields: Object.keys(updateProfileDto),
+    });
+
+    // Extract preferences from the nested structure
+    const preferences = updateProfileDto.preferences;
+
+    // Use updatePreferences method with PUT semantics (complete replacement)
+    return this.usersService.updatePreferences(currentUser.userId, preferences, true);
+  }
+
+  @Patch('profile')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile info (PATCH for user data)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user profile info updated successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email already in use',
+  })
+  async patchProfile(
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    this.logger.logUserAction('PROFILE_PATCH_ATTEMPT', currentUser.userId, {
       updateFields: Object.keys(updateUserDto),
     });
 

@@ -1,5 +1,6 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
 import   { RootState } from '../index';
+import { baseQueryWithAuth } from './baseQuery';
 import {
   User,
   Task,
@@ -31,7 +32,7 @@ import {
   UpdateMoodRequest,
   LogMeditationRequest,
 } from '../../types';
-import { WellnessTrend } from '@/types/wellness.types';
+import { WellnessTrend, WellnessRecommendation, CreateWellnessEntryRequest } from '@/types/wellness.types';
 
 // Define tag types for cache invalidation
 export const tagTypes = [
@@ -53,16 +54,7 @@ export const tagTypes = [
 
 export const apiSlice = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithAuth,
   tagTypes,
   endpoints: (builder) => ({
     // Auth endpoints
@@ -111,6 +103,15 @@ export const apiSlice = createApi({
       invalidatesTags: ['User'],
     }),
 
+    patchProfile: builder.mutation<User, Partial<User>>({
+      query: (userData) => ({
+        url: 'users/profile',
+        method: 'PATCH',
+        body: userData,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
     updatePreferences: builder.mutation<User, Partial<User['preferences']>>({
       query: (preferences) => ({
         url: 'users/preferences',
@@ -121,28 +122,29 @@ export const apiSlice = createApi({
     }),
 
     // Task endpoints
-    getTasks: builder.query<Task[], { filters?: TaskFilters; sort?: TaskSort }>({
-      query: ({ filters, sort }) => {
-        const params = new URLSearchParams();
+    getTasks: builder.query<Task[], { filters?: TaskFilters; sort?: TaskSort } | void>({
+      query: (params) => {
+        const { filters, sort } = params || {};
+        const urlParams = new URLSearchParams();
 
         if (filters) {
           Object.entries(filters).forEach(([key, value]) => {
             if (value) {
               if (Array.isArray(value)) {
-                value.forEach(v => params.append(key, v));
+                value.forEach(v => urlParams.append(key, v));
               } else {
-                params.append(key, value.toString());
+                urlParams.append(key, value.toString());
               }
             }
           });
         }
 
         if (sort) {
-          params.set('sortBy', sort.field);
-          params.set('sortOrder', sort.direction);
+          urlParams.set('sortBy', sort.field);
+          urlParams.set('sortOrder', sort.direction);
         }
 
-        return `tasks?${params.toString()}`;
+        return `tasks?${urlParams.toString()}`;
       },
       providesTags: ['Task'],
     }),
@@ -164,10 +166,10 @@ export const apiSlice = createApi({
     updateTask: builder.mutation<Task, { id: string; updates: UpdateTaskRequest }>({
       query: ({ id, updates }) => ({
         url: `tasks/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: updates,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Task', id }],
+      invalidatesTags: (result, error, { id }) => ['Task', { type: 'Task', id }],
     }),
 
     deleteTask: builder.mutation<void, string>({
@@ -175,7 +177,7 @@ export const apiSlice = createApi({
         url: `tasks/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Task', id }],
+      invalidatesTags: (result, error, id) => ['Task', { type: 'Task', id }],
     }),
 
     // Session endpoints
@@ -595,6 +597,7 @@ export const {
   useLogoutMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
+  usePatchProfileMutation,
   useUpdatePreferencesMutation,
   useGetTasksQuery,
   useGetTaskByIdQuery,
