@@ -36,9 +36,20 @@ interface UIState {
   };
 }
 
+const getInitialTheme = (): 'light' | 'dark' | 'auto' => {
+  // Check localStorage first
+  const savedTheme = localStorage.getItem('theme-mode');
+  if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'auto') {
+    return savedTheme;
+  }
+
+  // Fall back to system preference
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
 const initialState: UIState = {
   sidebarOpen: true,
-  theme: 'light',
+  theme: getInitialTheme(),
   currentView: 'timer',
   loading: false,
   error: null,
@@ -73,7 +84,15 @@ const uiSlice = createSlice({
     },
     setTheme: (state, action: PayloadAction<'light' | 'dark' | 'auto'>) => {
       state.theme = action.payload;
+      // Save to localStorage for persistence
+      localStorage.setItem('theme-mode', action.payload);
     },
+  toggleTheme: (state) => {
+    // Simple toggle between light and dark (ignoring auto)
+    const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+    state.theme = newTheme;
+    localStorage.setItem('theme-mode', newTheme);
+  },
     setCurrentView: (state, action: PayloadAction<string>) => {
       state.currentView = action.payload;
     },
@@ -236,6 +255,7 @@ export const {
   setSidebarOpen,
   toggleSidebar,
   setTheme,
+  toggleTheme,
   setCurrentView,
   setLoading,
   setError,

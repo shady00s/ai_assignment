@@ -24,6 +24,11 @@ const NotificationCenterContainer = styled.div`
   width: 320px;
   max-height: 400px;
   background: white;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: #1E293B !important;
+  }
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(127, 168, 112, 0.1);
@@ -48,6 +53,11 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(135deg, #F8F9FA 0%, #E8D8C8 100%);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: linear-gradient(135deg, #1E293B 0%, #334155 100%) !important;
+  }
 `;
 
 const Title = styled.h3`
@@ -55,6 +65,11 @@ const Title = styled.h3`
   font-size: ${({ theme }) => theme.typography.fontSize.mobile.md};
   font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
   color: #2C3E50;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #F1F5F9 !important;
+  }
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
 `;
 
@@ -71,6 +86,11 @@ const CloseButton = styled.button`
   &:hover {
     background: rgba(127, 168, 112, 0.1);
     color: #2C3E50;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #F1F5F9 !important;
+  }
   }
 `;
 
@@ -107,6 +127,11 @@ const NotificationTitle = styled.div`
   font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
   font-size: ${({ theme }) => theme.typography.fontSize.mobile.sm};
   color: #2C3E50;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #F1F5F9 !important;
+  }
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 

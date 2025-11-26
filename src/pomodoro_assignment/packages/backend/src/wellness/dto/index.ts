@@ -29,3 +29,49 @@ export {
 
 // Query DTOs
 export { WellnessHistoryQueryDto, WellnessAnalyticsQueryDto } from './wellness-query.dto';
+
+// Hydration DTOs
+export {
+  IncrementHydrationDto,
+  SetHydrationGoalDto,
+  QuickWaterDto
+} from './hydration.dto';
+
+// Movement DTOs
+export {
+  LogMovementDto,
+  LogStepsDto,
+  SetMovementGoalDto,
+  QuickMovementDto,
+  MovementIntensity
+} from './movement.dto';
+
+// Mood DTOs
+export {
+  UpdateMoodDto,
+  LogSleepDto,
+  QuickMoodDto
+} from './mood.dto';
+
+// Meditation DTOs
+export {
+  LogMeditationDto,
+  CompleteMeditationDto,
+  LogBreathingDto,
+  QuickMeditationDto
+} from './meditation.dto';
+
+// Posture and Eye Rest DTOs
+export {
+  LogPostureCheckDto,
+  LogEyeRestDto
+} from './posture.dto';
+
+ 
+
+// Utility DTOs
+export {
+  AcknowledgeRecommendationDto,
+  WellnessScoreResponseDto,
+  WellnessAchievementDto
+} from './utility.dto';

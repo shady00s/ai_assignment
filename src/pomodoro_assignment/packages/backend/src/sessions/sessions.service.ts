@@ -25,7 +25,7 @@ export class SessionsService {
         taskId: createSessionDto.taskId,
         type: createSessionDto.type || 'POMODORO',
         duration: createSessionDto.duration,
-        startTime: new Date(),
+        // startTime will be set when session is actually started
         notes: createSessionDto.notes,
       },
       include: {
@@ -233,6 +233,7 @@ export class SessionsService {
         userId,
         completed: false,
         endTime: null,
+        startTime: { not: null }, // Only consider sessions that have actually started
       },
       include: {
         user: {
@@ -392,6 +393,37 @@ export class SessionsService {
         },
       },
     });
+
+    return updatedSession;
+  }
+
+  async skipSession(id: string, userId: string, notes?: string): Promise<Session> {
+    const session = await this.findOne(id, userId);
+
+    if (session.completed) {
+      throw new ForbiddenException('Session already completed');
+    }
+
+    const updatedSession = await this.prisma.session.update({
+      where: { id },
+      data: {
+        endTime: new Date(),
+        completed: false, // Mark as not completed (skipped)
+        notes: notes || 'Session skipped',
+        quality: 1, // Low quality for skipped sessions
+      },
+      include: {
+        user: {
+          select: { id: true, firstName: true, lastName: true, email: true, avatar: true },
+        },
+        task: {
+          select: { id: true, title: true },
+        },
+      },
+    });
+
+    // Note: We do NOT update task progress for skipped sessions
+    // This is different from completed sessions which may increment task progress
 
     return updatedSession;
   }

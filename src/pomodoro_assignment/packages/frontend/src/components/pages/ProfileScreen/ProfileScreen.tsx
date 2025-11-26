@@ -1182,12 +1182,6 @@ export const ProfileScreen: React.FC = () => {
             </ButtonGroup>
 
             <ButtonGroup>
-              <Button variant="secondary">
-                🌙 Theme: Light
-              </Button>
-              <Button variant="secondary">
-                🌍 Language: English
-              </Button>
             </ButtonGroup>
 
             <ButtonGroup>

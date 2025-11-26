@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useLocation, Outlet } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/redux';
 import { authSelectors } from '../../store/slices/authSlice';
-import { useGlobalTimer } from '../../hooks';
+import { useGlobalTimer, useThemeToggle } from '../../hooks';
 import { EnhancedNavigation } from '../organisms/EnhancedNavigation';
 
 interface AppLayoutProps {
@@ -12,9 +12,18 @@ interface AppLayoutProps {
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, ${({ theme }) => theme.colors.neutral[50]} 0%, ${({ theme }) => theme.colors.neutral[100]} 100%);
   width: 100%;
   overflow-x: hidden;
+
+  /* Default light mode background */
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.neutral[50]} 0%, ${({ theme }) => theme.colors.neutral[100]} 100%);
+  color: ${({ theme }) => theme.colors.neutral[800]};
+
+  /* Dark mode styles using global class targeting */
+  .dark-mode & {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+    color: #F1F5F9 !important;
+  }
 `;
 
 
@@ -57,6 +66,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children = <Outlet /> }) =
   const location = useLocation();
 
   const isAuthenticated = useAppSelector(authSelectors.selectIsAuthenticated);
+  const { isDarkMode, toggleTheme } = useThemeToggle();
 
   // Initialize global timer hook - this ensures timer continues running during navigation
   useGlobalTimer();
@@ -83,8 +93,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children = <Outlet /> }) =
           <EnhancedNavigation
             onMenuToggle={() => console.log('Menu toggle')}
             onNotificationsClick={() => console.log('Notifications clicked')}
-            onThemeToggle={() => console.log('Theme toggle')}
-            isDarkMode={false}
+            onThemeToggle={toggleTheme}
+            isDarkMode={isDarkMode}
           />
         </NavigationWrapper>
       )}

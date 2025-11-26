@@ -146,7 +146,7 @@ model Session {
   taskId      String?     @map("task_id")
   type        String      @default("POMODORO")  // 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK' | 'CUSTOM'
   duration    Int         // in minutes
-  startTime   DateTime    @map("started_at")   //  naming
+  startTime   DateTime?   @map("started_at")   //  naming - optional, set when session starts
   endTime     DateTime?   @map("completed_at") //  naming
   notes       String?
   quality     Int?        // 1-5 rating

@@ -105,6 +105,15 @@ export class SessionsController {
     return this.sessionsService.pauseSession(id, req.user.id);
   }
 
+  @Post(':id/skip')
+  skipSession(
+    @Param('id') id: string,
+    @Body() body: { notes?: string },
+    @Request() req,
+  ) {
+    return this.sessionsService.skipSession(id, req.user.id, body.notes);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
     return this.sessionsService.remove(id, req.user.id);

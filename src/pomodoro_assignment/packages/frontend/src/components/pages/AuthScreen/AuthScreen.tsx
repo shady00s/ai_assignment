@@ -27,6 +27,11 @@ const AuthContainer = styled.div`
   position: relative;
   overflow: hidden;
 
+  /* Dark mode styles */
+  .dark-mode & {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+  }
+
   ${({ theme }) => theme.mediaQueries.mobile} {
     padding: ${({ theme }) => theme.spacing.md};
   }
@@ -67,6 +72,12 @@ const AuthCard = styled(motion.div)`
   max-width: 440px;
   position: relative;
   z-index: 1;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: #1E293B !important;
+    color: #F1F5F9 !important;
+  }
 
   ${({ theme }) => theme.mediaQueries.mobile} {
     padding: ${({ theme }) => theme.spacing.lg};
@@ -114,6 +125,11 @@ const TabContainer = styled.div`
   border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing.xs};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: #334155 !important;
+  }
 `;
 
 const TabButton = styled.button<{ $active: boolean }>`
@@ -133,6 +149,12 @@ const TabButton = styled.button<{ $active: boolean }>`
 
   &:hover {
     color: ${({ theme }) => theme.colors.primary.main};
+  }
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: ${({ $active }) => $active ? '#1E293B' : 'transparent'} !important;
+    color: ${({ $active, theme }) => $active ? theme.colors.primary.main : theme.colors.neutral[400]} !important;
   }
 
   ${({ theme }) => theme.mediaQueries.mobile} {

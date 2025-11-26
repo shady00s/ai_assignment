@@ -28,7 +28,27 @@ import {
   WellnessGoalResponseDto,
   WellnessAnalyticsDto,
   WellnessTrendsDto,
-  WellnessRecommendationDto
+  WellnessRecommendationDto,
+  // New DTOs for additional endpoints
+  IncrementHydrationDto,
+  SetHydrationGoalDto,
+  LogMovementDto,
+  LogStepsDto,
+  SetMovementGoalDto,
+  UpdateMoodDto,
+  LogSleepDto,
+  LogMeditationDto,
+  CompleteMeditationDto,
+  LogBreathingDto,
+  LogPostureCheckDto,
+  LogEyeRestDto,
+  QuickWaterDto,
+  QuickMovementDto,
+  QuickMoodDto,
+  QuickMeditationDto,
+  AcknowledgeRecommendationDto,
+  WellnessScoreResponseDto,
+  WellnessAchievementDto
 } from './dto';
 
 @ApiTags('wellness')
@@ -424,5 +444,315 @@ export class WellnessController {
   async getWellnessSummary(@Request() req) {
     const userId = req.user.id;
     return await this.wellnessService.getWellnessSummary(userId);
+  }
+
+  // ========================================
+  // HYDRATION ENDPOINTS
+  // ========================================
+
+  @Post('hydration/increment')
+  @ApiOperation({ summary: 'Increment water intake for today' })
+  @ApiResponse({
+    status: 200,
+    description: 'Hydration incremented successfully',
+    type: WellnessEntryResponseDto
+  })
+  async incrementHydration(
+    @Request() req,
+    @Body(ValidationPipe) incrementData: IncrementHydrationDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.incrementHydration(userId, incrementData);
+  }
+
+  @Post('hydration/goal')
+  @ApiOperation({ summary: 'Set daily hydration goal' })
+  @ApiResponse({
+    status: 200,
+    description: 'Hydration goal set successfully',
+    type: WellnessEntryResponseDto
+  })
+  async setHydrationGoal(
+    @Request() req,
+    @Body(ValidationPipe) goalData: SetHydrationGoalDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.setHydrationGoal(userId, goalData);
+  }
+
+  // ========================================
+  // MOVEMENT ENDPOINTS
+  // ========================================
+
+  @Post('movement/log')
+  @ApiOperation({ summary: 'Log a movement break' })
+  @ApiResponse({
+    status: 200,
+    description: 'Movement break logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logMovementBreak(
+    @Request() req,
+    @Body(ValidationPipe) movementData: LogMovementDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logMovementBreak(userId, movementData);
+  }
+
+  @Post('movement/steps')
+  @ApiOperation({ summary: 'Log step count for a specific date' })
+  @ApiResponse({
+    status: 200,
+    description: 'Steps logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logSteps(
+    @Request() req,
+    @Body(ValidationPipe) stepsData: LogStepsDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logSteps(userId, stepsData);
+  }
+
+  @Post('movement/goal')
+  @ApiOperation({ summary: 'Set daily movement goals' })
+  @ApiResponse({
+    status: 200,
+    description: 'Movement goals set successfully'
+  })
+  async setMovementGoals(
+    @Request() req,
+    @Body(ValidationPipe) goalsData: SetMovementGoalDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.setMovementGoals(userId, goalsData);
+  }
+
+  // ========================================
+  // MOOD AND MENTAL WELLNESS ENDPOINTS
+  // ========================================
+
+  @Post('mood/update')
+  @ApiOperation({ summary: 'Update mood, stress, and energy levels' })
+  @ApiResponse({
+    status: 200,
+    description: 'Mood updated successfully',
+    type: WellnessEntryResponseDto
+  })
+  async updateMood(
+    @Request() req,
+    @Body(ValidationPipe) moodData: UpdateMoodDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.updateMood(userId, moodData);
+  }
+
+  @Post('mood/sleep')
+  @ApiOperation({ summary: 'Log sleep hours and quality' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sleep data logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logSleep(
+    @Request() req,
+    @Body(ValidationPipe) sleepData: LogSleepDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logSleep(userId, sleepData);
+  }
+
+  // ========================================
+  // MEDITATION ENDPOINTS
+  // ========================================
+
+  @Post('meditation/log')
+  @ApiOperation({ summary: 'Log meditation session' })
+  @ApiResponse({
+    status: 200,
+    description: 'Meditation session logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logMeditation(
+    @Request() req,
+    @Body(ValidationPipe) meditationData: LogMeditationDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logMeditation(userId, meditationData);
+  }
+
+  @Post('meditation/complete')
+  @ApiOperation({ summary: 'Complete a meditation session' })
+  @ApiResponse({
+    status: 200,
+    description: 'Meditation session completed successfully'
+  })
+  async completeMeditationSession(
+    @Request() req,
+    @Body(ValidationPipe) sessionData: CompleteMeditationDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.completeMeditationSession(userId, sessionData);
+  }
+
+  @Post('meditation/breathing')
+  @ApiOperation({ summary: 'Log breathing exercise' })
+  @ApiResponse({
+    status: 200,
+    description: 'Breathing exercise logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logBreathingExercise(
+    @Request() req,
+    @Body(ValidationPipe) breathingData: LogBreathingDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logBreathingExercise(userId, breathingData);
+  }
+
+  // ========================================
+  // POSTURE AND EYE REST ENDPOINTS
+  // ========================================
+
+  @Post('posture/check')
+  @ApiOperation({ summary: 'Log posture check completion' })
+  @ApiResponse({
+    status: 200,
+    description: 'Posture check logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logPostureCheck(
+    @Request() req,
+    @Body(ValidationPipe) postureData: LogPostureCheckDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logPostureCheck(userId, postureData);
+  }
+
+  @Post('eye-rest/break')
+  @ApiOperation({ summary: 'Log eye rest break' })
+  @ApiResponse({
+    status: 200,
+    description: 'Eye rest break logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async logEyeRestBreak(
+    @Request() req,
+    @Body(ValidationPipe) eyeRestData: LogEyeRestDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.logEyeRestBreak(userId, eyeRestData);
+  }
+
+  // ========================================
+  // QUICK ACTION ENDPOINTS
+  // ========================================
+
+  @Post('quick/water')
+  @ApiOperation({ summary: 'Quick water logging' })
+  @ApiResponse({
+    status: 200,
+    description: 'Water logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async quickLogWater(
+    @Request() req,
+    @Body(ValidationPipe) waterData: QuickWaterDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.quickLogWater(userId, waterData);
+  }
+
+  @Post('quick/movement')
+  @ApiOperation({ summary: 'Quick movement logging' })
+  @ApiResponse({
+    status: 200,
+    description: 'Movement logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async quickLogMovement(
+    @Request() req,
+    @Body(ValidationPipe) movementData: QuickMovementDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.quickLogMovement(userId, movementData);
+  }
+
+  @Post('quick/mood')
+  @ApiOperation({ summary: 'Quick mood logging' })
+  @ApiResponse({
+    status: 200,
+    description: 'Mood logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async quickLogMood(
+    @Request() req,
+    @Body(ValidationPipe) moodData: QuickMoodDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.quickLogMood(userId, moodData);
+  }
+
+  @Post('quick/meditation')
+  @ApiOperation({ summary: 'Quick meditation logging' })
+  @ApiResponse({
+    status: 200,
+    description: 'Meditation logged successfully',
+    type: WellnessEntryResponseDto
+  })
+  async quickLogMeditation(
+    @Request() req,
+    @Body(ValidationPipe) meditationData: QuickMeditationDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.quickLogMeditation(userId, meditationData);
+  }
+
+  // ========================================
+  // UTILITY ENDPOINTS
+  // ========================================
+
+  @Get('score')
+  @ApiOperation({ summary: 'Get current wellness score with breakdown' })
+  @ApiResponse({
+    status: 200,
+    description: 'Wellness score retrieved successfully',
+    type: WellnessScoreResponseDto
+  })
+  async getWellnessScore(@Request() req) {
+    const userId = req.user.id;
+    return await this.wellnessService.getWellnessScore(userId);
+  }
+
+  @Get('achievements')
+  @ApiOperation({ summary: 'Get wellness-related achievements' })
+  @ApiResponse({
+    status: 200,
+    description: 'Wellness achievements retrieved successfully',
+    type: [WellnessAchievementDto]
+  })
+  async getWellnessAchievements(@Request() req) {
+    const userId = req.user.id;
+    return await this.wellnessService.getWellnessAchievements(userId);
+  }
+
+  @Post('recommendations/:recommendationId/acknowledge')
+  @ApiOperation({ summary: 'Acknowledge or unacknowledge a recommendation' })
+  @ApiParam({
+    name: 'recommendationId',
+    description: 'ID of the recommendation to acknowledge',
+    example: 'wellness_rec_001'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recommendation acknowledged successfully'
+  })
+  async acknowledgeRecommendation(
+    @Request() req,
+    @Param('recommendationId') recommendationId: string,
+    @Body(ValidationPipe) acknowledgeData: AcknowledgeRecommendationDto,
+  ) {
+    const userId = req.user.id;
+    return await this.wellnessService.acknowledgeRecommendation(userId, recommendationId, acknowledgeData);
   }
 }

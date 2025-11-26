@@ -62,9 +62,14 @@ const HeaderContent = styled.div`
 const Title = styled.h1`
   font-size: ${({ theme }) => theme.typography.fontSize.mobile['2xl']};
   font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
-  color: #2C3E50;
+  color: ${({ theme }) => theme.colors.neutral[800]};
   margin: 0;
   font-family: ${({ theme }) => theme.typography.fontFamily.secondary};
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: ${({ theme }) => theme.colors.neutral[100]} !important;
+  }
 
   ${({ theme }) => theme.mediaQueries.tablet} {
     font-size: ${({ theme }) => theme.typography.fontSize.tablet['3xl']};
@@ -77,9 +82,14 @@ const Title = styled.h1`
 
 const Subtitle = styled.p`
   font-size: ${({ theme }) => theme.typography.fontSize.mobile.base};
-  color: #8B7D7B;
+  color: ${({ theme }) => theme.colors.neutral[600]};
   margin: ${({ theme }) => theme.spacing.mobile.xs} 0 0 0;
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: ${({ theme }) => theme.colors.neutral[400]} !important;
+  }
 
   ${({ theme }) => theme.mediaQueries.tablet} {
     font-size: ${({ theme }) => theme.typography.fontSize.tablet.base};

@@ -314,6 +314,9 @@ const timerSlice = createSlice({
         state.autoStartWork = action.payload.autoStartWork;
       }
     },
+    setCurrentSession: (state, action: PayloadAction<Session | null>) => {
+      state.currentSession = action.payload;
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -430,6 +433,7 @@ export const {
   setSessionType,
   setDuration,
   setAutoStartSettings,
+  setCurrentSession,
   clearError,
 } = timerSlice.actions;
 

@@ -16,6 +16,11 @@ const DesktopContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(135deg, #F8F9FA 0%, #E8D8C8 100%);
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+  }
 `;
 
 const HeaderSection = styled.header`
@@ -26,6 +31,12 @@ const HeaderSection = styled.header`
   position: sticky;
   top: 0;
   z-index: 100;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-bottom: 1px solid rgba(127, 168, 112, 0.2) !important;
+  }
 `;
 
 const MainContent = styled.main`
@@ -72,6 +83,13 @@ const ZenGardenSection = styled.div`
   border: 1px solid rgba(127, 168, 112, 0.1);
   backdrop-filter: blur(10px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(127, 168, 112, 0.2) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+  }
 `;
 
 const CurrentTaskSection = styled.div`
@@ -80,6 +98,12 @@ const CurrentTaskSection = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};
   border: 1px solid rgba(127, 168, 112, 0.1);
   backdrop-filter: blur(10px);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(127, 168, 112, 0.2) !important;
+  }
 `;
 
 const WellnessSection = styled.div`
@@ -88,6 +112,12 @@ const WellnessSection = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};
   border: 1px solid rgba(127, 168, 112, 0.1);
   backdrop-filter: blur(10px);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(127, 168, 112, 0.2) !important;
+  }
 `;
 
 const ControlsSection = styled.div`

@@ -4,12 +4,19 @@ import {
   WellnessEntry,
   WellnessReminder,
   WellnessGoal,
+  WellnessAnalyticsDto,
+  WellnessTrendsDto,
+  WellnessRecommendationDto,
   DetailedWellnessAnalytics,
   Recommendation,
   IncrementHydrationRequest,
   LogMovementRequest,
   UpdateMoodRequest,
   LogMeditationRequest,
+  WellnessHistoryQueryDto,
+  WellnessAnalyticsQueryDto,
+  CreateWellnessEntryDto,
+  UpdateWellnessEntryDto,
 } from '../../types';
 
 // Define tag types for cache invalidation
@@ -41,8 +48,18 @@ export const wellnessApi = createApi({
       providesTags: ['WellnessEntry'],
     }),
 
-    getWellnessHistory: builder.query<WellnessEntry[], { startDate: string; endDate: string }>({
-      query: ({ startDate, endDate }) => `history?startDate=${startDate}&endDate=${endDate}`,
+    getWellnessHistory: builder.query<any, WellnessHistoryQueryDto>({
+      query: ({ startDate, endDate, days, page = 1, limit = 10, sortBy = 'date', sortOrder = 'desc' }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+        if (days) params.set('days', days.toString());
+        if (page) params.set('page', page.toString());
+        if (limit) params.set('limit', limit.toString());
+        if (sortBy) params.set('sortBy', sortBy);
+        if (sortOrder) params.set('sortOrder', sortOrder);
+        return `history?${params.toString()}`;
+      },
       providesTags: ['WellnessEntry'],
     }),
 
@@ -51,7 +68,7 @@ export const wellnessApi = createApi({
       providesTags: (result, error, { date }) => [{ type: 'WellnessEntry', id: date }],
     }),
 
-    createWellnessEntry: builder.mutation<WellnessEntry, Partial<WellnessEntry>>({
+    createWellnessEntry: builder.mutation<WellnessEntry, CreateWellnessEntryDto>({
       query: (entry) => ({
         url: 'entry',
         method: 'POST',
@@ -60,7 +77,7 @@ export const wellnessApi = createApi({
       invalidatesTags: ['WellnessEntry', 'WellnessAnalytics'],
     }),
 
-    updateWellnessEntry: builder.mutation<WellnessEntry, { date: string; updates: Partial<WellnessEntry> }>({
+    updateWellnessEntry: builder.mutation<WellnessEntry, { date: string; updates: UpdateWellnessEntryDto }>({
       query: ({ date, updates }) => ({
         url: `entry/${date}`,
         method: 'PUT',
@@ -270,30 +287,34 @@ export const wellnessApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'WellnessGoal', id }],
     }),
 
-    // Analytics endpoints
-    getWellnessAnalytics: builder.query<DetailedWellnessAnalytics, { days?: number; category?: string }>({
-      query: ({ days = 30, category }) => {
+    // Analytics endpoints (aligned with backend)
+    getWellnessAnalytics: builder.query<WellnessAnalyticsDto, WellnessAnalyticsQueryDto>({
+      query: ({ days = 30, startDate, endDate, category, includeRecommendations = true, includeTrends = false }) => {
         const params = new URLSearchParams();
-        params.set('days', days.toString());
+        if (days) params.set('days', days.toString());
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
         if (category) params.set('category', category);
-        return `analytics?${params.toString()}`;
+        if (includeRecommendations !== undefined) params.set('includeRecommendations', includeRecommendations.toString());
+        if (includeTrends !== undefined) params.set('includeTrends', includeTrends.toString());
+        return `analytics/summary?${params.toString()}`;
       },
       providesTags: ['WellnessAnalytics'],
     }),
 
-    getWellnessTrends: builder.query<any, { period: 'week' | 'month' | 'year' }>({
-      query: ({ period }) => `analytics/trends?period=${period}`,
+    getWellnessTrends: builder.query<WellnessTrendsDto[], { days?: number }>({
+      query: ({ days = 30 }) => `analytics/trends?days=${days}`,
       providesTags: ['WellnessAnalytics'],
     }),
 
-    getWellnessSummary: builder.query<any, { period: 'day' | 'week' | 'month' }>({
-      query: ({ period }) => `analytics/summary?period=${period}`,
+    getWellnessSummary: builder.query<any, void>({
+      query: () => 'summary',
       providesTags: ['WellnessAnalytics'],
     }),
 
-    // Recommendations endpoint
-    getWellnessRecommendations: builder.query<Recommendation[], { limit?: number }>({
-      query: ({ limit = 10 }) => `recommendations${limit ? `?limit=${limit}` : ''}`,
+    // Recommendations endpoint (aligned with backend)
+    getWellnessRecommendations: builder.query<WellnessRecommendationDto[], { days?: number }>({
+      query: ({ days = 30 }) => `analytics/recommendations?days=${days}`,
       providesTags: ['WellnessRecommendation'],
     }),
 

@@ -89,7 +89,7 @@ export interface Session {
   createdAt: string;
 }
 
-export type SessionType = 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK';
+export type SessionType = 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK' | 'CUSTOM';
 
 // Team types
 export interface Team {
@@ -209,9 +209,44 @@ export interface TeamAnalytics {
   };
 }
 
+// Task and Session Analytics types
+export interface TaskAnalytics {
+  totalTasks: number;
+  completedTasks: number;
+  completionRate: number;
+  tasksByStatus: Record<string, number>;
+  tasksByPriority: Record<string, number>;
+  overdueTasks: number;
+  upcomingDeadlines: Array<Task>; // Simplified as Task array
+}
+
+export interface SessionAnalytics {
+  totalSessions: number;
+  completedSessions: number;
+  completionRate: number;
+  totalMinutes: number;
+  averageQuality: number;
+  sessionsByType: Record<string, number>;
+  recentSessions: Array<Session>; // Simplified as Session array
+  currentStreak: number;
+}
+
+// Team analytics user type - limited fields returned by backend
+export interface TeamMemberUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string;
+  wellnessScore: number;
+  level: number;
+  xp: number;
+  streak: number;
+}
+
 export interface TeamMemberStats {
   userId: string;
-  user: User;
+  user: TeamMemberUser;
   focusTime: number; // minutes in period
   tasksCompleted: number;
   completionRate: number;
@@ -261,21 +296,32 @@ export interface UpdateTaskRequest {
   status?: TaskStatus;
   priority?: TaskPriority;
   estimatedPomodoros?: number;
+  completedPomodoros?: number;
   assigneeId?: string;
   dueDate?: string;
   tags?: string[];
 }
 
 export interface CreateSessionRequest {
-  type: SessionType;
+  type?: SessionType; // Optional in backend, defaults to POMODORO
   taskId?: string;
-  plannedDuration?: number;
+  duration: number; // Required in backend, 1-180 minutes
+  notes?: string;
 }
 
 export interface CompleteSessionRequest {
   quality?: number;
   notes?: string;
   interruptions?: number;
+}
+
+export interface UpdateSessionRequest {
+  type?: SessionType;
+  taskId?: string;
+  duration?: number;
+  notes?: string;
+  quality?: number; // 1-5 rating
+  interruptions?: number; // 0 or more
 }
 
 // UI State types
@@ -337,13 +383,11 @@ export interface TaskSort {
 }
 
 export interface SessionFilters {
-  type?: SessionType[];
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-  userId?: string[];
-  taskId?: string[];
+  type?: SessionType; // Single type, not array (backend expects single value)
+  taskId?: string; // Single taskId, not array (backend expects single value)
+  startDate?: string; // Direct date strings, not nested object
+  endDate?: string; // Direct date strings, not nested object
+  // Note: Backend doesn't filter by userId - it uses the authenticated user automatically
 }
 
 // Wellness Tracking System Types
@@ -408,6 +452,83 @@ export interface WellnessGoal {
   updatedAt: string;
 }
 
+// Wellness Analytics DTOs (aligned with backend)
+export interface WellnessAnalyticsDto {
+  userId: string;
+  period: number;
+  startDate: Date;
+  endDate: Date;
+
+  // Hydration analytics
+  hydration: {
+    weeklyAverage: number;
+    bestDay: string;
+    consistencyScore: number;
+    trend: 'improving' | 'stable' | 'declining';
+    goalAchievementRate: number;
+  };
+
+  // Movement analytics
+  movement: {
+    averageBreaks: number;
+    averageMinutes: number;
+    mostActiveDay: string;
+    weeklyTotal: number;
+    goalAchievementRate: number;
+  };
+
+  // Mental wellness analytics
+  mentalWellness: {
+    averageMoodRating: number;
+    averageStressLevel: number;
+    averageEnergyLevel: number;
+    meditationStreak: number;
+    totalMindfulnessSessions: number;
+  };
+
+  // Sleep analytics
+  sleep: {
+    averageHours: number;
+    averageQuality: number;
+    consistencyScore: number;
+    bestSleepDay: string;
+  };
+
+  // Overall wellness score
+  overall: {
+    overallScore: number;
+    trendDirection: 'upward' | 'stable' | 'downward';
+    streakDays: number;
+    perfectDaysCount: number;
+    complianceRate: number;
+  };
+
+  // Optional fields from includeTrends/includeRecommendations
+  trends?: WellnessTrendsDto[];
+  recommendations?: WellnessRecommendationDto[];
+}
+
+export interface WellnessTrendsDto {
+  date: string;
+  hydrationGlasses: number;
+  movementBreaks: number;
+  moodRating: number;
+  stressLevel: number;
+  energyLevel: number;
+  wellnessScore: number;
+}
+
+export interface WellnessRecommendationDto {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  actionable: boolean;
+  estimatedImpact: string;
+}
+
+// Legacy interface for backward compatibility
 export interface DetailedWellnessAnalytics {
   hydration: {
     weeklyAverage: number;
@@ -452,6 +573,55 @@ export interface Recommendation {
   actionable: boolean;
   icon: string;
   category: string;
+}
+
+// Wellness Query DTOs (aligned with backend)
+export interface WellnessHistoryQueryDto {
+  startDate?: string;
+  endDate?: string;
+  days?: number;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface WellnessAnalyticsQueryDto {
+  days?: number;
+  startDate?: string;
+  endDate?: string;
+  category?: 'HYDRATION' | 'MOVEMENT' | 'MEDITATION' | 'SLEEP' | 'ALL';
+  includeRecommendations?: boolean;
+  includeTrends?: boolean;
+}
+
+// Wellness Request DTOs (aligned with backend)
+export interface CreateWellnessEntryDto {
+  date?: string;
+  // Hydration tracking
+  hydrationGlasses: number;
+  hydrationGoal: number;
+  // Movement tracking
+  movementBreaks: number;
+  movementMinutes: number;
+  stepsCount?: number;
+  // Mental wellness
+  meditationMinutes: number;
+  breathingExercises: number;
+  mindfulnessSessions: number;
+  // Self-reported metrics
+  moodRating: number;
+  stressLevel: number;
+  energyLevel: number;
+  sleepQuality?: number;
+  sleepHours?: number;
+  // Session-based wellness
+  postureChecks: number;
+  eyeRestBreaks: number;
+}
+
+export interface UpdateWellnessEntryDto extends Partial<CreateWellnessEntryDto> {
+  // All fields are optional for updates
 }
 
 export interface MeditationOption {
@@ -550,5 +720,4 @@ export interface WellnessAnalytics {
   moodRating: number; // 1-5
   stressLevel: number; // 1-5
   energyLevel: number; // 1-5
-  detailedAnalytics?: DetailedWellnessAnalytics;
 }

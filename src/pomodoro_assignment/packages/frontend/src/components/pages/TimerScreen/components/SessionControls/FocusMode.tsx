@@ -7,6 +7,8 @@ interface FocusModeProps {
   blockNotifications?: boolean;
   enableAmbientSounds?: boolean;
   setAmbientSound?: (sound: string) => void;
+  currentSound?: 'forest' | 'ocean' | 'cafe' | 'rain' | 'none';
+  soundEnabled?: boolean;
   className?: string;
 }
 
@@ -132,11 +134,11 @@ const FocusModeStatus = styled.div<{ $active: boolean }>`
 `;
 
 const ambientSounds = [
+  { id: 'none', name: 'Silent', icon: '🔇' },
   { id: 'forest', name: 'Forest', icon: '🌲' },
   { id: 'ocean', name: 'Ocean', icon: '🌊' },
-  { id: 'rain', name: 'Rain', icon: '🌧️' },
   { id: 'cafe', name: 'Cafe', icon: '☕' },
-  { id: 'white_noise', name: 'White Noise', icon: '📻' },
+  { id: 'rain', name: 'Rain', icon: '🌧️' },
 ];
 
 export const FocusMode: React.FC<FocusModeProps> = ({
@@ -145,16 +147,17 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   blockNotifications = true,
   enableAmbientSounds = false,
   setAmbientSound,
+  currentSound = 'none',
+  soundEnabled = false,
   className,
 }) => {
   const [notificationsBlocked, setNotificationsBlocked] = useState(blockNotifications);
-  const [ambientSoundEnabled, setAmbientSoundEnabled] = useState(enableAmbientSounds);
-  const [selectedSound, setSelectedSound] = useState('forest');
+  const [ambientSoundEnabled, setAmbientSoundEnabled] = useState(enableAmbientSounds || soundEnabled);
 
   useEffect(() => {
     setNotificationsBlocked(blockNotifications);
-    setAmbientSoundEnabled(enableAmbientSounds);
-  }, [blockNotifications, enableAmbientSounds]);
+    setAmbientSoundEnabled(enableAmbientSounds || soundEnabled);
+  }, [blockNotifications, enableAmbientSounds, soundEnabled]);
 
   const handleToggle = () => {
     const newActive = !isActive;
@@ -169,19 +172,19 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   const handleAmbientToggle = () => {
     const newEnabled = !ambientSoundEnabled;
     setAmbientSoundEnabled(newEnabled);
-    if (newEnabled) {
-      setAmbientSound?.(selectedSound);
+    if (newEnabled && currentSound !== 'none') {
+      setAmbientSound?.(currentSound);
     }
   };
 
   const handleSoundChange = (soundId: string) => {
-    setSelectedSound(soundId);
     if (ambientSoundEnabled) {
       setAmbientSound?.(soundId);
     }
   };
 
-  const selectedSoundData = ambientSounds.find(sound => sound.id === selectedSound);
+  const selectedSoundData = ambientSounds.find(sound => sound.id === currentSound);
+  const effectiveSelectedSound = soundEnabled ? currentSound : 'none';
 
   return (
     <FocusModeContainer $active={isActive} className={className}>
@@ -221,13 +224,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           />
         </FocusFeature>
 
-        {ambientSoundEnabled && (
+        {soundEnabled && (
           <FocusFeature>
             <FeatureIcon $enabled={true}>
               {selectedSoundData?.icon}
             </FeatureIcon>
             <select
-              value={selectedSound}
+              value={currentSound}
               onChange={(e) => handleSoundChange(e.target.value)}
               style={{
                 marginLeft: 'auto',

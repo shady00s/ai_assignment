@@ -72,6 +72,7 @@ export const {
   decrementTime,
   setDuration,
   setAutoStartSettings,
+  setCurrentSession,
   clearError,
 } = timerSlice.actions;
 

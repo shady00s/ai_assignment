@@ -5,7 +5,7 @@ export { Button, Input, Card } from './atoms';
 export { TaskCard, KanbanColumn } from './molecules';
 
 // Organisms
-export { CircularTimer, Navigation } from './organisms';
+export { CircularTimer, Navigation, TaskSelectionModal } from './organisms';
 
 // Layout components
 export { AppLayout } from './Layout';

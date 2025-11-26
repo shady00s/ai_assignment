@@ -13,6 +13,11 @@ const ColumnContainer = styled.div<{ $isOver: boolean; $color: string }>`
   max-width: 320px;
   min-height: 400px;
   background-color: ${props => props.$isOver ? `${props.$color}15` : '#F8F9FA'};
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background-color: ${props => props.$isOver ? `${props.$color}25` : '#1E293B'} !important;
+  }
   border-radius: 16px;
   border: ${props => props.$isOver ? `2px solid ${props.$color}` : '1px solid rgba(0,0,0,0.08)'};
   transition: all 0.3s ease;
@@ -58,6 +63,11 @@ const ColumnHeader = styled.div<{ $color: string }>`
   border-bottom: 1px solid ${props => `${props.$color}20`};
   border-radius: 16px 16px 0 0;
   background-color: white;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background-color: #1E293B !important;
+  }
   flex-shrink: 0;
 
   ${props => props.theme.mediaQueries.tablet} {

@@ -173,11 +173,8 @@ const EmptyState = styled.div`
   }
 `;
 
-export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
-  level,
-  xp,
-  achievements = []
-}) => {
+export const AchievementGallery: React.FC<AchievementGalleryProps> = (props) => {
+  const { level, xp, achievements = [] } = props;
   const displayAchievements = achievements;
   const levelColor = getLevelColor(level);
   const xpProgress = getXpProgress(xp, level);

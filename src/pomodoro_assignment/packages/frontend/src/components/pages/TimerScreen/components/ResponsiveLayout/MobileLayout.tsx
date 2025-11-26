@@ -15,12 +15,23 @@ const MobileContainer = styled.div`
   flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(135deg, #F8F9FA 0%, #E8D8C8 100%);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+  }
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
 `;
 
 const HeaderSection = styled.header`
   padding: ${({ theme }) => theme.spacing.mobile.sm} ${({ theme }) => theme.spacing.mobile.md};
   background: rgba(255, 255, 255, 0.8);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-bottom: 1px solid rgba(127, 168, 112, 0.2) !important;
+  }
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(127, 168, 112, 0.1);
   position: sticky;
@@ -45,6 +56,12 @@ const ZenGardenSection = styled.section`
 
 const CurrentTaskSection = styled.section`
   background: rgba(255, 255, 255, 0.6);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(127, 168, 112, 0.2) !important;
+  }
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: ${({ theme }) => theme.spacing.mobile.md};
   border: 1px solid rgba(127, 168, 112, 0.1);
@@ -64,6 +81,12 @@ const AnalyticsSection = styled.section`
 
 const WellnessSection = styled.section`
   background: rgba(255, 255, 255, 0.6);
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(127, 168, 112, 0.2) !important;
+  }
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: ${({ theme }) => theme.spacing.mobile.md};
   border: 1px solid rgba(127, 168, 112, 0.1);

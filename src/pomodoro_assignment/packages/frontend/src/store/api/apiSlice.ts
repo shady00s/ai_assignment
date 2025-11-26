@@ -15,9 +15,13 @@ import {
   CreateTaskRequest,
   UpdateTaskRequest,
   CreateSessionRequest,
+  UpdateSessionRequest,
   FocusAnalytics,
   WellnessAnalytics,
   TeamAnalytics,
+  TaskAnalytics,
+  SessionAnalytics,
+  TeamMemberUser,
   Notification,
   TaskFilters,
   TaskSort,
@@ -39,6 +43,7 @@ export const tagTypes = [
   'User',
   'Task',
   'Session',
+  'ActiveSession',
   'Team',
   'Achievement',
   'UserAchievement',
@@ -186,15 +191,10 @@ export const apiSlice = createApi({
         const params = new URLSearchParams();
 
         if (filters) {
-          Object.entries(filters).forEach(([key, value]) => {
-            if (value) {
-              if (Array.isArray(value)) {
-                value.forEach(v => params.append(key, v));
-              } else {
-                params.append(key, value.toString());
-              }
-            }
-          });
+          if (filters.type) params.set('type', filters.type);
+          if (filters.taskId) params.set('taskId', filters.taskId);
+          if (filters.startDate) params.set('startDate', filters.startDate);
+          if (filters.endDate) params.set('endDate', filters.endDate);
         }
 
         if (limit) {
@@ -217,7 +217,15 @@ export const apiSlice = createApi({
         method: 'POST',
         body: sessionData,
       }),
-      invalidatesTags: ['Session', 'Analytics'],
+      invalidatesTags: ['Session', 'ActiveSession', 'Analytics'],
+    }),
+
+    getActiveSession: builder.query<Session | null, void>({
+      query: () => 'sessions/active',
+      providesTags: ['ActiveSession'],
+      // Prevent excessive refetching
+      keepUnusedDataFor: 30, // Keep cached data for 30 seconds
+      refetchOnMountOrArgChange: 30, // Only refetch if data is older than 30 seconds
     }),
 
     startSession: builder.mutation<Session, string>({
@@ -225,7 +233,10 @@ export const apiSlice = createApi({
         url: `sessions/${id}/start`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Session', id }],
+      invalidatesTags: (result, error, id) => [
+        { type: 'Session', id },
+        'ActiveSession', // Invalidate active session when session starts
+      ],
     }),
 
     pauseSession: builder.mutation<Session, string>({
@@ -233,7 +244,23 @@ export const apiSlice = createApi({
         url: `sessions/${id}/pause`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Session', id }],
+      invalidatesTags: (result, error, id) => [
+        { type: 'Session', id },
+        'ActiveSession', // Invalidate active session when session pauses
+      ],
+    }),
+
+    skipSession: builder.mutation<Session, { id: string; notes?: string }>({
+      query: ({ id, notes }) => ({
+        url: `sessions/${id}/skip`,
+        method: 'POST',
+        body: { notes },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Session', id },
+        'ActiveSession', // Invalidate active session when session skips
+        'Analytics',
+      ],
     }),
 
     completeSession: builder.mutation<Session, { id: string; quality?: number; notes?: string }>({
@@ -244,10 +271,34 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: 'Session', id },
+        'ActiveSession', // Invalidate active session when any session completes
         'Analytics',
         'User',
         'Achievement',
         'UserAchievement',
+      ],
+    }),
+
+    updateSession: builder.mutation<Session, { id: string; updates: UpdateSessionRequest }>({
+      query: ({ id, updates }) => ({
+        url: `sessions/${id}`,
+        method: 'PATCH',
+        body: updates,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Session', id },
+        'Analytics',
+      ],
+    }),
+
+    deleteSession: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `sessions/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'Session', id },
+        'Analytics',
       ],
     }),
 
@@ -377,6 +428,27 @@ export const apiSlice = createApi({
         if (startDate) params.set('startDate', startDate);
         if (endDate) params.set('endDate', endDate);
         return `analytics/teams/${teamId}?${params.toString()}`;
+      },
+      providesTags: ['Analytics'],
+    }),
+
+    // Task and Session Analytics endpoints
+    getTaskAnalytics: builder.query<TaskAnalytics, { startDate?: string; endDate?: string }>({
+      query: ({ startDate, endDate }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+        return `tasks/analytics?${params.toString()}`;
+      },
+      providesTags: ['Analytics'],
+    }),
+
+    getSessionAnalytics: builder.query<SessionAnalytics, { startDate?: string; endDate?: string }>({
+      query: ({ startDate, endDate }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+        return `sessions/analytics?${params.toString()}`;
       },
       providesTags: ['Analytics'],
     }),
@@ -607,9 +679,13 @@ export const {
   useGetSessionsQuery,
   useGetSessionByIdQuery,
   useCreateSessionMutation,
+  useGetActiveSessionQuery,
   useStartSessionMutation,
   usePauseSessionMutation,
+  useSkipSessionMutation,
   useCompleteSessionMutation,
+  useUpdateSessionMutation,
+  useDeleteSessionMutation,
   useGetTeamsQuery,
   useGetTeamByIdQuery,
   useCreateTeamMutation,
@@ -626,6 +702,8 @@ export const {
   useGetFocusAnalyticsQuery,
   useGetWellnessAnalyticsQuery,
   useGetTeamAnalyticsQuery,
+  useGetTaskAnalyticsQuery,
+  useGetSessionAnalyticsQuery,
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,

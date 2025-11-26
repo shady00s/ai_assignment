@@ -4,6 +4,9 @@ export { useAppDispatch, useAppSelector } from './redux';
 // Timer hooks
 export { useGlobalTimer } from './useGlobalTimer';
 
+// Theme hooks
+export { useThemeToggle } from './useThemeToggle';
+
 // Wellness hooks
 export { useWellnessData } from './useWellnessData';
 export { useWellnessReminders } from './useWellnessReminders';

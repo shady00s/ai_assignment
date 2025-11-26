@@ -1,5 +1,5 @@
 import { Task } from '@/types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useGetTasksQuery } from '@/store/api/apiSlice';
   
 interface UseTaskIntegrationOptions {
@@ -52,9 +52,10 @@ export const useTaskIntegration = (options: UseTaskIntegrationOptions = {}): Use
 
   const currentTask = selectedTaskId ? tasks.find(task => task.id === selectedTaskId) : undefined;
 
+
   const selectTask = useCallback((taskId: string) => {
     setSelectedTaskId(taskId);
-  }, []);
+  }, [tasks]);
 
   const clearCurrentTask = useCallback(() => {
     setSelectedTaskId(undefined);
@@ -94,14 +95,14 @@ export const useTaskIntegration = (options: UseTaskIntegrationOptions = {}): Use
   }, [tasks, getTaskProgress]);
 
   // Auto-select the next available task if no task is currently selected
-  useState(() => {
+  useEffect(() => {
     if (!selectedTaskId && tasks.length > 0) {
       const nextTask = getNextTask();
       if (nextTask) {
         setSelectedTaskId(nextTask.id);
       }
     }
-  });
+  }, [selectedTaskId, tasks, getNextTask]);
 
   return {
     tasks,

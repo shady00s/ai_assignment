@@ -7,6 +7,9 @@ interface AmbientSettingsProps {
   currentSound: 'forest' | 'ocean' | 'cafe' | 'rain' | 'none';
   focusMode: boolean;
   notificationsEnabled: boolean;
+  isPlaying?: boolean;
+  isLoading?: boolean;
+  audioError?: string | null;
   onSoundToggle?: (enabled: boolean) => void;
   onVolumeChange?: (volume: number) => void;
   onSoundChange?: (sound: string) => void;
@@ -192,12 +195,44 @@ const soundOptions = [
   { value: 'rain', label: 'Rain', icon: '🌧️' },
 ];
 
+const StatusIndicator = styled.span<{ $status: 'playing' | 'loading' | 'error' | 'idle' }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${({ $status }) => {
+    switch ($status) {
+      case 'playing': return '#27AE60'; // Green
+      case 'loading': return '#F39C12'; // Orange
+      case 'error': return '#E74C3C'; // Red
+      default: return '#D4C4B0'; // Gray
+    }
+  }};
+  animation: ${({ $status }) => $status === 'playing' ? 'pulse 1.5s ease-in-out infinite' : 'none'};
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
+
+const ErrorMessage = styled.div`
+  font-size: 10px;
+  color: #E74C3C;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 4px;
+`;
+
 export const AmbientSettings: React.FC<AmbientSettingsProps> = ({
   soundEnabled,
   volume,
   currentSound,
   focusMode,
   notificationsEnabled,
+  isPlaying = false,
+  isLoading = false,
+  audioError = null,
   onSoundToggle,
   onVolumeChange,
   onSoundChange,
@@ -229,9 +264,24 @@ export const AmbientSettings: React.FC<AmbientSettingsProps> = ({
     }
   };
 
+  // Determine audio status
+  const getAudioStatus = (): 'playing' | 'loading' | 'error' | 'idle' => {
+    if (audioError) return 'error';
+    if (isLoading) return 'loading';
+    if (isPlaying && soundEnabled && currentSound !== 'none') return 'playing';
+    return 'idle';
+  };
+
   return (
     <SettingsContainer className={className}>
-      <SettingsTitle>🎵 Ambient Settings</SettingsTitle>
+      <SettingsTitle>
+        🎵 Ambient Settings
+        <StatusIndicator
+          $status={getAudioStatus()}
+          style={{ marginLeft: '8px' }}
+          title={audioError || (isPlaying ? 'Playing' : isLoading ? 'Loading...' : 'Idle')}
+        />
+      </SettingsTitle>
 
       <SettingsGrid>
         <SettingItem>
@@ -326,6 +376,12 @@ export const AmbientSettings: React.FC<AmbientSettingsProps> = ({
           </PresetButton>
         ))}
       </PresetButtons>
+
+      {audioError && (
+        <ErrorMessage>
+          ⚠️ {audioError}
+        </ErrorMessage>
+      )}
     </SettingsContainer>
   );
 };

@@ -4,6 +4,7 @@ import {
   useGetFocusAnalyticsQuery,
   useGetWellnessAnalyticsQuery,
   useGetProfileQuery,
+  useGetSessionsQuery,
   } from '@store/api';
 
 import { useGetTodayWellnessQuery,
@@ -144,6 +145,17 @@ export const DashboardScreen: React.FC = () => {
     error: profileError
   } = useGetProfileQuery();
 
+  // Get sessions data for weekly chart
+  const {
+    data: sessionsData,
+    isLoading: sessionsLoading,
+    error: sessionsError
+  } = useGetSessionsQuery({
+    type: 'POMODORO',
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate
+  });
+
   // Create default wellness entry if none exists
   useEffect(() => {
     if (!todayWellnessLoading && !todayWellnessError && !todayWellness && !isCreatingWellness) {
@@ -166,12 +178,12 @@ export const DashboardScreen: React.FC = () => {
 
   // Disable achievements API call - using empty data
   const userAchievements: any[] = [];
- 
-  // Temporarily disable sessions API call - using empty data
-  const sessions: any[] = []; // Mock empty sessions data
 
-  const isLoading = focusLoading || wellnessLoading || profileLoading || todayWellnessLoading || isCreatingWellness;
-  const hasError = focusError || wellnessError || profileError || todayWellnessError;
+  // Use real sessions data from API
+  const sessions = sessionsData || [];
+
+  const isLoading = focusLoading || wellnessLoading || profileLoading || todayWellnessLoading || isCreatingWellness || sessionsLoading;
+  const hasError = focusError || wellnessError || profileError || todayWellnessError || sessionsError;
 
   if (isLoading) {
     return (

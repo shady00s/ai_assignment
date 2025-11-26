@@ -25,6 +25,11 @@ const EditableTaskCard = styled(Card)<{ $isDragging: boolean; $isEditing: boolea
   }};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   background: white;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background: #1E293B !important;
+  }
   min-height: 120px;
   display: flex;
   flex-direction: column;
@@ -106,6 +111,11 @@ const TaskTitle = styled.h4`
   line-height: 1.3;
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
 
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #F1F5F9 !important;
+  }
+
   ${({ theme }) => theme.mediaQueries.tablet} {
     font-size: 14px;
   }
@@ -121,6 +131,11 @@ const TaskDescription = styled.p`
   color: #8B7D7B;
   line-height: 1.4;
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #94A3B8 !important;
+  }
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -173,6 +188,13 @@ const EditableTextarea = styled.textarea`
   font-size: ${({ theme }) => theme.typography.fontSize.mobile.xs};
   color: ${({ theme }) => theme.colors.neutral[500]};
   background-color: #FFFFFF;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background-color: #0F172A !important;
+    color: #E2E8F0 !important;
+    border-color: #475569 !important;
+  }
   line-height: 1.4;
   font-family: ${({ theme }) => theme.typography.fontFamily.primary};
   resize: vertical;
@@ -201,6 +223,13 @@ const EditSelect = styled.select`
   font-size: ${({ theme }) => theme.typography.fontSize.mobile.xs};
   color: #2C3E50;
   background-color: white;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background-color: #0F172A !important;
+    color: #E2E8F0 !important;
+    border-color: #475569 !important;
+  }
   margin-bottom: ${({ theme }) => theme.spacing.mobile.sm};
   width: 100%;
   box-sizing: border-box;
@@ -289,6 +318,28 @@ const FullWidthInput = styled.div`
   grid-column: 1 / -1;
   width: 100%;
   box-sizing: border-box;
+`;
+
+const FieldLabel = styled.small`
+  font-size: 10px;
+  color: #8B7D7B;
+  display: block;
+  margin-bottom: 2px;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #94A3B8 !important;
+  }
+`;
+
+const TagMoreCount = styled.span`
+  font-size: 10px;
+  color: #8B7D7B;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #94A3B8 !important;
+  }
 `;
 
 const FieldHint = styled.div`
@@ -384,6 +435,12 @@ const Tag = styled.span`
   font-size: 10px;
   background-color: #F0E6DC;
   color: #8B7D7B;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background-color: #374151 !important;
+    color: #D1D5DB !important;
+  }
 `;
 
 const ProgressContainer = styled.div`
@@ -398,6 +455,11 @@ const ProgressHeader = styled.div`
   margin-bottom: 4px;
   font-size: 11px;
   color: #8B7D7B;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #94A3B8 !important;
+  }
 `;
 
 const ProgressBar = styled.div`
@@ -405,6 +467,11 @@ const ProgressBar = styled.div`
   background-color: #F0E6DC;
   border-radius: 2px;
   overflow: hidden;
+
+  /* Dark mode styles */
+  .dark-mode & {
+    background-color: #374151 !important;
+  }
 `;
 
 const ProgressFill = styled.div<{ $color: string; $percentage: number }>`
@@ -427,9 +494,20 @@ const EditIconButton = styled.button`
   border-radius: 4px;
   font-size: 12px;
 
+  /* Dark mode styles */
+  .dark-mode & {
+    color: #94A3B8 !important;
+  }
+
   &:hover {
     background-color: #F0E6DC;
     color: #2C3E50;
+
+    /* Dark mode styles */
+    .dark-mode & {
+      background-color: #374151 !important;
+      color: #F1F5F9 !important;
+    }
   }
 `;
 
@@ -626,9 +704,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   <Tag key={index}>{tag}</Tag>
                 ))}
                 {tags.length > 3 && (
-                  <span style={{ fontSize: '10px', color: '#8B7D7B' }}>
+                  <TagMoreCount>
                     +{tags.length - 3}
-                  </span>
+                  </TagMoreCount>
                 )}
               </TagsContainer>
             )}
@@ -678,7 +756,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               </FieldHint>
               <FormGrid >
                 <div>
-                  <small style={{ fontSize: '10px', color: '#8B7D7B', display: 'block', marginBottom: '2px' }}>Priority</small>
+                  <FieldLabel>Priority</FieldLabel>
                   <EditSelect
                     value={editForm.priority}
                     onChange={(e) => setEditForm({ ...editForm, priority: e.target.value as TaskCardProps['priority'] })}
@@ -692,7 +770,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 </div>
 
                 <div>
-                  <small style={{ fontSize: '10px', color: '#8B7D7B', display: 'block', marginBottom: '2px', flexShrink: '0' }}>Est. Pomodoros</small>
+                  <FieldLabel>Est. Pomodoros</FieldLabel>
                   <EditableInput
                     type="number"
                     value={editForm.estimatedPomodoros.toString()}
@@ -703,7 +781,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
                 {/* Actual pomodoros input - full width on mobile, second column on desktop */}
                 <FullWidthInput>
-                  <small style={{ fontSize: '10px', color: '#8B7D7B', display: 'block', marginBottom: '2px' }}>Actual Pomodoros</small>
+                  <FieldLabel>Actual Pomodoros</FieldLabel>
                   <EditableInput
                     type="number"
                     value={editForm.completedPomodoros.toString()}

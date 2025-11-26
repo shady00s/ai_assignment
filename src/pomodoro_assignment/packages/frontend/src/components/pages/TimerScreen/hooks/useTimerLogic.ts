@@ -1,7 +1,15 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { useCallback, useEffect } from 'react';
-import { selectTimerState, selectIsRunning, selectIsPaused, selectRemainingTime, selectTotalTime, selectSessionType, selectSessionsCompleted, startTimer, pauseTimer, skipSession, setSessionType } from '@/store';
-import { useCreateSessionMutation, useCompleteSessionMutation } from '@/store/api';
+import { useCallback, useEffect, useRef } from 'react';
+import { selectTimerState, selectIsRunning, selectIsPaused, selectRemainingTime, selectTotalTime, selectSessionType, selectSessionsCompleted, startTimer, pauseTimer, skipSession, setSessionType, setCurrentSession } from '@/store';
+import { SessionType } from '@/types';
+import {
+  useCreateSessionMutation,
+  useCompleteSessionMutation,
+   useStartSessionMutation,
+  usePauseSessionMutation,
+
+} from '@/store/api';
+import { useGetActiveSessionQuery, useSkipSessionMutation } from '@/store/api/apiSlice';
  
 
 interface UseTimerLogicOptions {
@@ -14,7 +22,7 @@ interface UseTimerLogicReturn {
   isPaused: boolean;
   remainingTime: number;
   totalTime: number;
-  sessionType: 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK';
+  sessionType: SessionType;
   sessionsCompleted: number;
   progress: number;
   canStart: boolean;
@@ -26,7 +34,7 @@ interface UseTimerLogicReturn {
   handleResume: () => void;
   handleSkip: () => void;
   handleComplete: () => void;
-  handleSessionTypeChange: (type: 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK') => void;
+  handleSessionTypeChange: (type: SessionType) => void;
   formatTime: (seconds: number) => string;
   isLoading: boolean;
 }
@@ -43,8 +51,14 @@ export const useTimerLogic = (options: UseTimerLogicOptions = {}): UseTimerLogic
 
   const [createSession, { isLoading: isCreatingSession }] = useCreateSessionMutation();
   const [completeSession, { isLoading: isCompletingSession }] = useCompleteSessionMutation();
+  const [skipSessionMutation, { isLoading: isSkippingSession }] = useSkipSessionMutation();
+  const [startSession, { isLoading: isStartingSession }] = useStartSessionMutation();
+  const [pauseSession, { isLoading: isPausingSession }] = usePauseSessionMutation();
 
-  const isLoading = isCreatingSession || isCompletingSession;
+  // Sync with backend active session
+  const { data: activeSession, refetch: refetchActiveSession } = useGetActiveSessionQuery();
+
+  const isLoading = isCreatingSession || isCompletingSession || isSkippingSession || isStartingSession || isPausingSession;
   const progress = totalTime > 0 ? (totalTime - remainingTime) / totalTime : 0;
 
   // Calculate control permissions
@@ -55,53 +69,122 @@ export const useTimerLogic = (options: UseTimerLogicOptions = {}): UseTimerLogic
 
   const handleStart = useCallback(async () => {
     try {
+      let currentSession = timerState.currentSession || activeSession;
+
       // Create a new session if needed
-      if (!timerState.currentSession) {
-        await createSession({
+      if (!currentSession) {
+        const duration = Math.floor(totalTime / 60); // Convert to minutes
+        if (duration < 1 || duration > 180) {
+          throw new Error(`Session duration must be between 1 and 180 minutes, got ${duration}`);
+        }
+
+        const createdSession = await createSession({
           type: sessionType,
           taskId: options.currentTaskId,
-          plannedDuration: Math.floor(totalTime / 60), // Convert to minutes
+          duration, // Backend expects 'duration', not 'plannedDuration'
         }).unwrap();
+        currentSession = createdSession;
+
+        // Update local timer state with the created session
+        dispatch(setCurrentSession(createdSession));
+      }
+
+      // Start the session in backend
+      if (currentSession?.id) {
+        try {
+          await startSession(currentSession.id).unwrap();
+        } catch (startError: any) {
+          // If session is already started, that's actually fine
+          if (startError?.status === 403 && (startError?.data?.error === 'Forbidden' || startError?.data?.message === 'Session already started')) {
+            console.log('Session already started, proceeding with timer');
+          } else {
+            console.error('Failed to start session:', startError);
+            throw startError;
+          }
+        }
       }
 
       dispatch(startTimer());
     } catch (error) {
       console.error('Failed to start session:', error);
     }
-  }, [dispatch, sessionType, timerState.currentSession, options.currentTaskId, totalTime, createSession]);
+  }, [dispatch, sessionType, timerState.currentSession, activeSession, options.currentTaskId, totalTime, createSession, startSession]);
 
-  const handlePause = useCallback(() => {
-    dispatch(pauseTimer());
-  }, [dispatch]);
-
-  const handleResume = useCallback(() => {
-    dispatch(startTimer());
-  }, [dispatch]);
-
-  const handleSkip = useCallback(() => {
-    dispatch(skipSession());
-  }, [dispatch]);
-
-  const handleComplete = useCallback(async () => {
+  const handlePause = useCallback(async () => {
     try {
-      if (timerState.currentSession) {
-        await completeSession({
+      // Pause the session in backend if it exists
+      if (timerState.currentSession?.id) {
+        await pauseSession(timerState.currentSession.id).unwrap();
+      }
+      dispatch(pauseTimer());
+    } catch (error) {
+      console.error('Failed to pause session:', error);
+      // Still pause locally even if backend fails
+      dispatch(pauseTimer());
+    }
+  }, [dispatch, timerState.currentSession, pauseSession]);
+
+  const handleResume = useCallback(async () => {
+    try {
+      // Resume the session in backend if it was paused
+      if (timerState.currentSession?.id) {
+        await startSession(timerState.currentSession.id).unwrap();
+      }
+      dispatch(startTimer());
+    } catch (error) {
+      console.error('Failed to resume session:', error);
+      dispatch(startTimer());
+    }
+  }, [dispatch, timerState.currentSession, startSession]);
+
+  const handleSkip = useCallback(async () => {
+    try {
+      // If there's an active session, skip it using the dedicated skip endpoint
+      if (timerState.currentSession?.id) {
+        await skipSessionMutation({
           id: timerState.currentSession.id,
-          quality: 5, // Default quality score
-          notes: '',
-          interruptions: 0,
+          notes: 'Session skipped',
         }).unwrap();
 
+        // Notify callback if provided
         options.onSessionComplete?.(timerState.currentSession.id);
       }
 
-      dispatch(completeSession());
+      // Clear current session from Redux state
+      dispatch(skipSession());
+    } catch (error) {
+      console.error('Failed to skip session:', error);
+      // Still skip locally even if backend fails
+      dispatch(skipSession());
+    }
+  }, [dispatch, timerState.currentSession, skipSessionMutation, options]);
+
+  const handleComplete = useCallback(async () => {
+    try {
+      if (timerState.currentSession?.id) {
+        // Complete session in backend using RTK Query mutation
+        await completeSession({
+          id: timerState.currentSession.id,
+          quality: 5, // Default quality score
+          notes: 'Session completed successfully',
+        }).unwrap();
+
+        // Notify callback if provided
+        options.onSessionComplete?.(timerState.currentSession.id);
+
+        // Clear local timer state (the backend session is now completed)
+        dispatch(setCurrentSession(null)); // Clear the current session
+        dispatch(skipSession()); // Advance to next session type
+      }
     } catch (error) {
       console.error('Failed to complete session:', error);
+      // Still clear local state even if backend fails
+      dispatch(setCurrentSession(null));
+      dispatch(skipSession());
     }
-  }, [dispatch, timerState.currentSession, completeSession, options.onSessionComplete]);
+  }, [dispatch, timerState.currentSession, completeSession, options]);
 
-  const handleSessionTypeChange = useCallback((type: 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK') => {
+  const handleSessionTypeChange = useCallback((type: SessionType) => {
     if (!isRunning) {
       dispatch(setSessionType(type));
     }
@@ -113,12 +196,23 @@ export const useTimerLogic = (options: UseTimerLogicOptions = {}): UseTimerLogic
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
+  // Sync timer state with backend active session
+  useEffect(() => {
+    if (activeSession && activeSession !== timerState.currentSession) {
+      // Update local state with backend session data
+      // This could dispatch actions to sync timer state if needed
+    }
+  }, [activeSession, timerState.currentSession]);
+
   // Auto-complete when timer reaches zero
+  const handleCompleteRef = useRef(handleComplete);
+  handleCompleteRef.current = handleComplete;
+
   useEffect(() => {
     if (isRunning && remainingTime === 0) {
-      handleComplete();
+      handleCompleteRef.current();
     }
-  }, [isRunning, remainingTime, handleComplete]);
+  }, [isRunning, remainingTime]);
 
   return {
     isRunning,

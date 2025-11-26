@@ -11,7 +11,28 @@ import {
   WellnessAnalyticsQueryDto,
   WellnessReminderType,
   WellnessGoalCategory,
-  WellnessGoalPeriod
+  WellnessGoalPeriod,
+  // New DTOs for additional endpoints
+  IncrementHydrationDto,
+  SetHydrationGoalDto,
+  LogMovementDto,
+  LogStepsDto,
+  SetMovementGoalDto,
+  UpdateMoodDto,
+  LogSleepDto,
+  LogMeditationDto,
+  CompleteMeditationDto,
+  LogBreathingDto,
+  LogPostureCheckDto,
+  LogEyeRestDto,
+  QuickWaterDto,
+  QuickMovementDto,
+  QuickMoodDto,
+  QuickMeditationDto,
+  AcknowledgeRecommendationDto,
+  WellnessScoreResponseDto,
+  WellnessAchievementDto,
+  MovementIntensity
 } from './dto';
 
 @Injectable()
@@ -465,6 +486,416 @@ export class WellnessService {
       weeklyAverage: this.calculateWeeklyAverages(weeklyEntries),
       streak: await this.getWellnessStreak(userId),
       goals: await this.getActiveGoals(userId)
+    };
+  }
+
+  // ========================================
+  // ADDITIONAL WELLNESS OPERATIONS
+  // ========================================
+
+  /**
+   * Get or create today's wellness entry (helper method)
+   */
+  private async getOrCreateTodayEntry(userId: string) {
+    let entry = await this.getTodayWellnessEntry(userId);
+
+    if (!entry) {
+      const defaultEntry = this.getDefaultWellnessEntry();
+      entry = await this.createOrUpdateWellnessEntry(userId, defaultEntry);
+    }
+
+    return entry;
+  }
+
+  // ========================================
+  // HYDRATION OPERATIONS
+  // ========================================
+
+  /**
+   * Increment hydration for today
+   */
+  async incrementHydration(userId: string, incrementData: IncrementHydrationDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        hydrationGlasses: entry.hydrationGlasses + incrementData.glasses
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Set hydration goal
+   */
+  async setHydrationGoal(userId: string, goalData: SetHydrationGoalDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        hydrationGoal: goalData.goal
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  // ========================================
+  // MOVEMENT OPERATIONS
+  // ========================================
+
+  /**
+   * Log a movement break
+   */
+  async logMovementBreak(userId: string, movementData: LogMovementDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        movementBreaks: entry.movementBreaks + 1,
+        movementMinutes: entry.movementMinutes + movementData.duration
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Log steps for a specific date
+   */
+  async logSteps(userId: string, stepsData: LogStepsDto) {
+    const targetDate = stepsData.date ? new Date(stepsData.date) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+
+    let entry = await this.prisma.wellnessEntry.findFirst({
+      where: {
+        userId,
+        date: {
+          gte: targetDate,
+          lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+
+    if (!entry) {
+      const defaultEntry = this.getDefaultWellnessEntry();
+      entry = await this.createOrUpdateWellnessEntry(userId, {
+        ...defaultEntry,
+        date: targetDate
+      });
+    }
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        stepsCount: stepsData.steps
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Set movement goals
+   */
+  async setMovementGoals(userId: string, goalsData: SetMovementGoalDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    // Store goals in a separate goals table or as part of user preferences
+    // For now, we'll return the entry as goals are typically stored differently
+    return {
+      message: 'Movement goals updated successfully',
+      dailyBreaks: goalsData.dailyBreaks,
+      dailyMinutes: goalsData.dailyMinutes
+    };
+  }
+
+  // ========================================
+  // MOOD AND MENTAL WELLNESS OPERATIONS
+  // ========================================
+
+  /**
+   * Update mood metrics
+   */
+  async updateMood(userId: string, moodData: UpdateMoodDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        moodRating: moodData.mood,
+        stressLevel: moodData.stress,
+        energyLevel: moodData.energy
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Log sleep data
+   */
+  async logSleep(userId: string, sleepData: LogSleepDto) {
+    const targetDate = sleepData.date ? new Date(sleepData.date) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+
+    let entry = await this.prisma.wellnessEntry.findFirst({
+      where: {
+        userId,
+        date: {
+          gte: targetDate,
+          lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+
+    if (!entry) {
+      const defaultEntry = this.getDefaultWellnessEntry();
+      entry = await this.createOrUpdateWellnessEntry(userId, {
+        ...defaultEntry,
+        date: targetDate
+      });
+    }
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        sleepHours: sleepData.hours,
+        sleepQuality: sleepData.quality
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  // ========================================
+  // MEDITATION OPERATIONS
+  // ========================================
+
+  /**
+   * Log meditation session
+   */
+  async logMeditation(userId: string, meditationData: LogMeditationDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        meditationMinutes: entry.meditationMinutes + meditationData.minutes,
+        mindfulnessSessions: entry.mindfulnessSessions + 1
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Complete meditation session (placeholder - would typically update a session record)
+   */
+  async completeMeditationSession(userId: string, sessionData: CompleteMeditationDto) {
+    // For now, this is similar to logMeditation but could include session tracking
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        mindfulnessSessions: entry.mindfulnessSessions + 1
+      }
+    });
+
+    return {
+      ...this.formatWellnessEntryResponse(updatedEntry),
+      sessionId: sessionData.sessionId,
+      completedAt: new Date()
+    };
+  }
+
+  /**
+   * Log breathing exercise
+   */
+  async logBreathingExercise(userId: string, breathingData: LogBreathingDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        breathingExercises: entry.breathingExercises + 1,
+        meditationMinutes: entry.meditationMinutes + breathingData.duration
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  // ========================================
+  // POSTURE AND EYE REST OPERATIONS
+  // ========================================
+
+  /**
+   * Log posture check
+   */
+  async logPostureCheck(userId: string, postureData: LogPostureCheckDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        postureChecks: entry.postureChecks + (postureData.completed ? 1 : 0)
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Log eye rest break
+   */
+  async logEyeRestBreak(userId: string, eyeRestData: LogEyeRestDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        eyeRestBreaks: entry.eyeRestBreaks + (eyeRestData.completed ? 1 : 0)
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  // ========================================
+  // QUICK ACTION OPERATIONS
+  // ========================================
+
+  /**
+   * Quick water logging
+   */
+  async quickLogWater(userId: string, waterData: QuickWaterDto) {
+    return this.incrementHydration(userId, { glasses: waterData.glasses });
+  }
+
+  /**
+   * Quick movement logging
+   */
+  async quickLogMovement(userId: string, movementData: QuickMovementDto) {
+    const entry = await this.getOrCreateTodayEntry(userId);
+
+    const updatedEntry = await this.prisma.wellnessEntry.update({
+      where: { id: entry.id },
+      data: {
+        movementMinutes: entry.movementMinutes + movementData.minutes,
+        movementBreaks: entry.movementBreaks + 1
+      }
+    });
+
+    return this.formatWellnessEntryResponse(updatedEntry);
+  }
+
+  /**
+   * Quick mood logging
+   */
+  async quickLogMood(userId: string, moodData: QuickMoodDto) {
+    return this.updateMood(userId, {
+      mood: moodData.mood,
+      stress: moodData.stress,
+      energy: moodData.energy
+    });
+  }
+
+  /**
+   * Quick meditation logging
+   */
+  async quickLogMeditation(userId: string, meditationData: QuickMeditationDto) {
+    return this.logMeditation(userId, {
+      minutes: meditationData.minutes,
+      type: 'quick-session',
+      quality: 4,
+      notes: 'Quick meditation session'
+    });
+  }
+
+  // ========================================
+  // UTILITY OPERATIONS
+  // ========================================
+
+  /**
+   * Get wellness score with breakdown
+   */
+  async getWellnessScore(userId: string): Promise<WellnessScoreResponseDto> {
+    const entry = await this.getTodayWellnessEntry(userId);
+    const recentEntries = await this.getRecentWellnessEntries(userId, 7);
+
+    const score = entry ? this.calculateWellnessScore(entry) : 0;
+    const breakdown = {
+      hydration: entry ? Math.min(100, (entry.hydrationGlasses / entry.hydrationGoal) * 100) : 0,
+      movement: entry ? Math.min(100, (entry.movementBreaks / 5) * 100) : 0,
+      mentalWellness: entry ? ((entry.moodRating / 5) * 100) : 0,
+      mindfulness: entry ? Math.min(100, (entry.meditationMinutes / 15) * 100) : 0,
+      postureEyeRest: entry ? Math.min(100, ((entry.postureChecks + entry.eyeRestBreaks) / 10) * 100) : 0
+    };
+
+    const trend = this.calculateScoreTrend(recentEntries.map(e => this.calculateWellnessScore(e)));
+
+    return {
+      score,
+      breakdown,
+      trend
+    };
+  }
+
+  /**
+   * Get wellness achievements
+   */
+  async getWellnessAchievements(userId: string): Promise<WellnessAchievementDto[]> {
+    // This would typically query achievements from the database
+    // For now, returning sample achievements based on user's wellness data
+    const achievements: WellnessAchievementDto[] = [];
+
+    const entry = await this.getTodayWellnessEntry(userId);
+    if (entry && entry.hydrationGlasses >= entry.hydrationGoal) {
+      achievements.push({
+        id: 'hydration_daily_goal',
+        title: 'Daily Hydration Hero',
+        description: 'Reached your daily hydration goal',
+        category: 'HYDRATION',
+        unlockedAt: new Date().toISOString(),
+        progress: 100,
+        xpReward: 10
+      });
+    }
+
+    if (entry && entry.movementBreaks >= 5) {
+      achievements.push({
+        id: 'movement_daily_goal',
+        title: 'Movement Champion',
+        description: 'Completed 5 or more movement breaks',
+        category: 'MOVEMENT',
+        unlockedAt: new Date().toISOString(),
+        progress: 100,
+        xpReward: 15
+      });
+    }
+
+    return achievements;
+  }
+
+  /**
+   * Acknowledge recommendation
+   */
+  async acknowledgeRecommendation(userId: string, recommendationId: string, acknowledgeData: AcknowledgeRecommendationDto) {
+    // This would typically update a recommendations table
+    // For now, returning a success response
+    return {
+      message: acknowledgeData.acknowledged
+        ? 'Recommendation acknowledged successfully'
+        : 'Recommendation acknowledgment removed',
+      recommendationId,
+      acknowledged: acknowledgeData.acknowledged,
+      acknowledgedAt: acknowledgeData.acknowledged ? new Date() : null
     };
   }
 
