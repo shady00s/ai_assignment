@@ -413,6 +413,9 @@ export const NewTimerScreen: React.FC<NewTimerScreenProps> = ({ className }) => 
           sessionCount={timerLogic.sessionsCompleted}
           totalSessions={4}
           showTimeEstimate={!isMobile}
+          isTimerRunning={timerLogic.isRunning}
+          sessionType={timerLogic.sessionType}
+          sessionProgress={timerLogic.progress}
         />
       )}
     </div>
